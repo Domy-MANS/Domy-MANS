@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 220" width="1200" height="220" role="img" aria-label="Domy Yu: machines that see, software that connects.">
+<style>.sans{font-family:'Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
+<defs>
+<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="#ffd23f" stop-opacity="0"/><stop offset="1" stop-color="#ffd23f" stop-opacity=".22"/></linearGradient>
+<clipPath id="c"><rect width="1200" height="220" rx="14"/></clipPath>
+</defs>
+<g clip-path="url(#c)">
+<rect width="1200" height="220" fill="#0b0f17"/>
+<g><path d="M0 0V220" stroke="#141b28"/><path d="M40 0V220" stroke="#141b28"/><path d="M80 0V220" stroke="#141b28"/><path d="M120 0V220" stroke="#141b28"/><path d="M160 0V220" stroke="#141b28"/><path d="M200 0V220" stroke="#141b28"/><path d="M240 0V220" stroke="#141b28"/><path d="M280 0V220" stroke="#141b28"/><path d="M320 0V220" stroke="#141b28"/><path d="M360 0V220" stroke="#141b28"/><path d="M400 0V220" stroke="#141b28"/><path d="M440 0V220" stroke="#141b28"/><path d="M480 0V220" stroke="#141b28"/><path d="M520 0V220" stroke="#141b28"/><path d="M560 0V220" stroke="#141b28"/><path d="M600 0V220" stroke="#141b28"/><path d="M640 0V220" stroke="#141b28"/><path d="M680 0V220" stroke="#141b28"/><path d="M720 0V220" stroke="#141b28"/><path d="M760 0V220" stroke="#141b28"/><path d="M800 0V220" stroke="#141b28"/><path d="M840 0V220" stroke="#141b28"/><path d="M880 0V220" stroke="#141b28"/><path d="M920 0V220" stroke="#141b28"/><path d="M960 0V220" stroke="#141b28"/><path d="M1000 0V220" stroke="#141b28"/><path d="M1040 0V220" stroke="#141b28"/><path d="M1080 0V220" stroke="#141b28"/><path d="M1120 0V220" stroke="#141b28"/><path d="M1160 0V220" stroke="#141b28"/><path d="M0 0H1200" stroke="#141b28"/><path d="M0 40H1200" stroke="#141b28"/><path d="M0 80H1200" stroke="#141b28"/><path d="M0 120H1200" stroke="#141b28"/><path d="M0 160H1200" stroke="#141b28"/><path d="M0 200H1200" stroke="#141b28"/></g>
+<rect x="-260" width="260" height="220" fill="url(#beam)"><animateTransform attributeName="transform" type="translate" dur="9s" repeatCount="indefinite" values="0 0;1460 0;1460 0" keyTimes="0;0.6;1"/></rect>
+</g>
+<text x="56" y="106" class="sans" font-size="76" font-weight="700" fill="#eef2f8" letter-spacing="-1">Domy Yu</text>
+<text x="58" y="152" class="sans" font-size="27" fill="#eef2f8">Machines that see. Software that connects.</text>
+<text x="58" y="190" class="mono" font-size="17" fill="#ffd23f">vision / automation / full-stack</text>
+</svg>

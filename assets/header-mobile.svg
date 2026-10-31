@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300" role="img" aria-label="Domy Yu: machines that see, software that connects.">
+<style>.sans{font-family:'Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
+<defs>
+<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="#ffd23f" stop-opacity="0"/><stop offset="1" stop-color="#ffd23f" stop-opacity=".22"/></linearGradient>
+<clipPath id="c"><rect width="600" height="300" rx="14"/></clipPath>
+</defs>
+<g clip-path="url(#c)">
+<rect width="600" height="300" fill="#0b0f17"/>
+<g><path d="M0 0V300" stroke="#141b28"/><path d="M40 0V300" stroke="#141b28"/><path d="M80 0V300" stroke="#141b28"/><path d="M120 0V300" stroke="#141b28"/><path d="M160 0V300" stroke="#141b28"/><path d="M200 0V300" stroke="#141b28"/><path d="M240 0V300" stroke="#141b28"/><path d="M280 0V300" stroke="#141b28"/><path d="M320 0V300" stroke="#141b28"/><path d="M360 0V300" stroke="#141b28"/><path d="M400 0V300" stroke="#141b28"/><path d="M440 0V300" stroke="#141b28"/><path d="M480 0V300" stroke="#141b28"/><path d="M520 0V300" stroke="#141b28"/><path d="M560 0V300" stroke="#141b28"/><path d="M0 0H600" stroke="#141b28"/><path d="M0 40H600" stroke="#141b28"/><path d="M0 80H600" stroke="#141b28"/><path d="M0 120H600" stroke="#141b28"/><path d="M0 160H600" stroke="#141b28"/><path d="M0 200H600" stroke="#141b28"/><path d="M0 240H600" stroke="#141b28"/><path d="M0 280H600" stroke="#141b28"/></g>
+<rect x="-200" width="200" height="300" fill="url(#beam)"><animateTransform attributeName="transform" type="translate" dur="9s" repeatCount="indefinite" values="0 0;800 0;800 0" keyTimes="0;0.6;1"/></rect>
+</g>
+<text x="28" y="108" class="sans" font-size="84" font-weight="700" fill="#eef2f8" letter-spacing="-1">Domy Yu</text>
+<text x="30" y="166" class="sans" font-size="31" fill="#eef2f8">Machines that see.</text>
+<text x="30" y="206" class="sans" font-size="31" fill="#eef2f8">Software that connects.</text>
+<text x="30" y="258" class="mono" font-size="22" fill="#ffd23f">vision / automation / full-stack</text>
+</svg>
