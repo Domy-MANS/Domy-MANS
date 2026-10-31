@@ -75,7 +75,7 @@ def timeline(x, height, node_y, accent, year, plays_first):
     dur = 6
     a, b = (0, 0.5) if plays_first else (0.5, 1)
     label = (
-        f'<text x="{x - 22}" y="{node_y + 9}" text-anchor="end" class="mono" font-size="25" font-weight="600" fill="#6f7c8f">{year}</text>'
+        f'<text x="{x - 22}" y="{node_y + 9}" text-anchor="end" class="mono" font-size="24" font-weight="600" fill="#6f7c8f">{year}</text>'
         if year
         else ""
     )
@@ -101,6 +101,20 @@ def timeline(x, height, node_y, accent, year, plays_first):
     )
 
 
+GUTTER_SHARE, CARD_SHARE = 8, 92  # percent of README width; must match README.md
+RAIL_GAP = 16  # rail runs past the card so the space between cards has no link
+
+
+def write_rail(fname, card_w, height, x, node_y, accent, year, plays_first):
+    gw = round(card_w * GUTTER_SHARE / CARD_SHARE, 2)
+    h = height + RAIL_GAP
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {gw} {h}" width="{gw}" height="{h}" role="img" aria-label="{year or 'timeline'}">
+{STYLE}
+{timeline(x, h, node_y, accent, year, plays_first)}
+</svg>"""
+    (OUT / "assets" / fname).write_text(svg, encoding="utf-8")
+
+
 def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobile_lines, period, plays_first=False, cta=None):
     chip_svg, x = [], 58
     for c in chips:
@@ -120,11 +134,9 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
             (PX, PY, 1, 1), (PX + PW, PY, -1, 1), (PX, PY + PH, 1, -1), (PX + PW, PY + PH, -1, -1),
         ]
     )
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W + 130} {H}" width="{W + 130}" height="{H}" role="img" aria-label="{label}">
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="{label}">
 {STYLE}
 <defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
-{timeline(106, H, 84, accent, period, plays_first)}
-<g transform="translate(130 0)">
 <rect x=".5" y=".5" width="{W - 1}" height="{H - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
 <rect x="58" y="44" width="52" height="5" rx="2.5" fill="{accent}"/>
 <text x="58" y="98" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
@@ -136,9 +148,9 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
 {panel}
 <rect x="{PX}" y="{PY}" width="{PW}" height="{PH}" fill="none" stroke="{LINE}"/>
 {brackets}
-</g>
 </svg>"""
     (OUT / "assets" / fname).write_text(svg, encoding="utf-8")
+    write_rail(f"timeline-{period}.svg", W, H, 82, 84, accent, period, plays_first)
     mobile_block(fname.replace(".svg", "-mobile.svg"), title, subtitle, mobile_lines, chips, panel, brackets, accent, label, period, plays_first, cta)
 
 
@@ -160,11 +172,9 @@ def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, 
         f'<text x="30" y="{desc_top + i * 36:.0f}" class="sans" font-size="25" fill="{MUTED}">{l}</text>'
         for i, l in enumerate(lines)
     )
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mw + 44} {mh}" width="{mw + 44}" height="{mh}" role="img" aria-label="{label}">
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mw} {mh}" width="{mw}" height="{mh}" role="img" aria-label="{label}">
 {STYLE}
 <defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
-{timeline(18, mh, 72, accent, None, plays_first)}
-<g transform="translate(44 0)">
 <rect x=".5" y=".5" width="{mw - 1}" height="{mh - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
 <rect x="30" y="30" width="52" height="5" rx="2.5" fill="{accent}"/>
 <text x="94" y="40" class="mono" font-size="21" fill="{MUTED}">{period}</text>
@@ -179,9 +189,9 @@ def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, 
 </g>
 {desc}
 {''.join(chip_svg)}
-</g>
 </svg>"""
     (OUT / "assets" / fname).write_text(svg, encoding="utf-8")
+    write_rail(f"timeline-{period}-mobile.svg", mw, mh, 24, 72, accent, None, plays_first)
 
 
 def header_mobile():
@@ -315,7 +325,7 @@ def vision_block():
 <rect x="{PX}" y="{PY + PH - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
 {status_steps(steps, dur, YELLOW)}"""
     block(
-        "project-vision.svg",
+        "card-vision.svg",
         "insect-frass-vision",
         "Vision-guided insect and frass separation",
         [
@@ -497,7 +507,7 @@ def us_block():
 <rect x="{PX}" y="{PY + PH - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
 {status_steps(steps, dur, PINK)}"""
     block(
-        "project-us.svg",
+        "card-us.svg",
         "Us",
         "An emotional social platform",
         [
