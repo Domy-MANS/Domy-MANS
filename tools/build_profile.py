@@ -75,7 +75,7 @@ def timeline(x, height, node_y, accent, year, plays_first):
     dur = 6
     a, b = (0, 0.5) if plays_first else (0.5, 1)
     label = (
-        f'<text x="{x - 22}" y="{node_y + 9}" text-anchor="end" class="mono" font-size="25" font-weight="600" fill="{TEXT}">{year}</text>'
+        f'<text x="{x - 22}" y="{node_y + 9}" text-anchor="end" class="mono" font-size="25" font-weight="600" fill="#6f7c8f">{year}</text>'
         if year
         else ""
     )
@@ -86,8 +86,8 @@ def timeline(x, height, node_y, accent, year, plays_first):
         op_vals, op_times = [0, 0, 1, 1], [0, 0.5, 0.501, 1]
         cy_vals, cy_times = [height, height, 0], [0, 0.5, 1]
     return (
-        f'<path d="M{x} 0V{height}" stroke="#3a4557" stroke-width="2.5" stroke-dasharray="7 7"/>'
-        f'<circle cx="{x}" r="5" fill="#fff" cy="{height}">'
+        f'<path d="M{x} 0V{height}" stroke="#6f7c8f" stroke-width="2.5" stroke-dasharray="7 7"/>'
+        f'<circle cx="{x}" r="5" fill="#8a97aa" cy="{height}">'
         + anim("cy", dur, cy_vals, cy_times)
         + anim("opacity", dur, op_vals, op_times)
         + "</circle>"
