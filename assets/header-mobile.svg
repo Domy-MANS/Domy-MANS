@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" width="600" height="300" role="img" aria-label="Domy Yu: machines that see, software that connects.">
 <style>.sans{font-family:'Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
 <defs>
-<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="#ffd23f" stop-opacity="0"/><stop offset="1" stop-color="#ffd23f" stop-opacity=".22"/></linearGradient>
+<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="#ffd23f" stop-opacity="0"/><stop offset=".5" stop-color="#ffd23f" stop-opacity=".16"/><stop offset="1" stop-color="#ffd23f" stop-opacity="0"/></linearGradient>
 <clipPath id="c"><rect width="600" height="300" rx="14"/></clipPath>
 </defs>
 <g clip-path="url(#c)">

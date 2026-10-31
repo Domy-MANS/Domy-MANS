@@ -192,7 +192,7 @@ def header_mobile():
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mw} {h}" width="{mw}" height="{h}" role="img" aria-label="Domy Yu: machines that see, software that connects.">
 {STYLE}
 <defs>
-<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="{YELLOW}" stop-opacity="0"/><stop offset="1" stop-color="{YELLOW}" stop-opacity=".22"/></linearGradient>
+<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="{YELLOW}" stop-opacity="0"/><stop offset=".5" stop-color="{YELLOW}" stop-opacity=".16"/><stop offset="1" stop-color="{YELLOW}" stop-opacity="0"/></linearGradient>
 <clipPath id="c"><rect width="{mw}" height="{h}" rx="14"/></clipPath>
 </defs>
 <g clip-path="url(#c)">
@@ -213,7 +213,7 @@ def header():
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {h}" width="{W}" height="{h}" role="img" aria-label="Domy Yu: machines that see, software that connects.">
 {STYLE}
 <defs>
-<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="{YELLOW}" stop-opacity="0"/><stop offset="1" stop-color="{YELLOW}" stop-opacity=".22"/></linearGradient>
+<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="{YELLOW}" stop-opacity="0"/><stop offset=".5" stop-color="{YELLOW}" stop-opacity=".16"/><stop offset="1" stop-color="{YELLOW}" stop-opacity="0"/></linearGradient>
 <clipPath id="c"><rect width="{W}" height="{h}" rx="14"/></clipPath>
 </defs>
 <g clip-path="url(#c)">
