@@ -661,20 +661,22 @@ def balance_block():
         [
             "Followed the Jiangxie Technology balance car tutorial on",
             "an STM32F103: complementary filter, then angle, speed",
-            "and turn PID loops, with adjusted PID gains.",
+            "and turn PID loops, tuned and running on my own car.",
         ],
         ["STM32F103", "MPU6050", "Cascaded PID", "Learning"],
-        balance_panel(PY, PH),
+        balance_panel(CTA_PY, CTA_PH),
         GREEN,
         "balance-car-learning overview: an illustration of a two-wheel car recovering from a push while the firmware reads tilt, filters it, and runs cascaded PID loops. A learning project based on the Jiangxie Technology tutorial.",
         [
             "Followed the Jiangxie Technology balance",
             "car tutorial on an STM32F103: complementary",
             "filter, then angle, speed and turn PID",
-            "loops, with adjusted PID gains.",
+            "loops, tuned and running on my own car.",
         ],
         period="2026",
         phase=(2, 4),
+        cta="Watch demo",
+        mobile_panel=balance_panel(PY, PH),
         rail="balance-2026",
     )
 

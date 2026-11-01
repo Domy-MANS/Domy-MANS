@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 56" preserveAspectRatio="none" width="600" height="56" role="img" aria-label="balance-car-learning overview: an illustration of a two-wheel car recovering from a push while the firmware reads tilt, filters it, and runs cascaded PID loops. A learning project based on the Jiangxie Technology tutorial.">
+<style>.sans{font-family:'Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
+<rect x=".5" y=".5" width="599" height="752" rx="14" fill="#0b0f17" stroke="#263041"/>
+<rect x="30" y="30" width="52" height="5" rx="2.5" fill="#4ade80"/>
+<text x="94" y="40" class="mono" font-size="21" fill="#9aa7ba">2026</text>
+<text x="30" y="102" class="sans" font-size="44" font-weight="700" fill="#eef2f8">balance-car-learning</text>
+<text x="30" y="140" class="sans" font-size="25" fill="#4ade80">Learning project, not original work</text>
+<rect x="356" y="61.0" width="214" height="50" rx="25.0" fill="#4ade80"/><text x="378" y="94.0" class="sans" font-size="23" font-weight="600" fill="#0b0f17">Watch demo</text><path d="M536 92.0L548 80.0M538 80.0H548V90.0" fill="none" stroke="#0b0f17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

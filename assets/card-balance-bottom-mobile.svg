@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 743" preserveAspectRatio="none" width="600" height="743" role="img" aria-label="balance-car-learning overview: an illustration of a two-wheel car recovering from a push while the firmware reads tilt, filters it, and runs cascaded PID loops. A learning project based on the Jiangxie Technology tutorial.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 116 600 637" preserveAspectRatio="none" width="600" height="637" role="img" aria-label="balance-car-learning overview: an illustration of a two-wheel car recovering from a push while the firmware reads tilt, filters it, and runs cascaded PID loops. A learning project based on the Jiangxie Technology tutorial.">
 <style>.sans{font-family:'Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
 <defs><clipPath id="tray"><rect x="690" y="34" width="470" height="292"/></clipPath></defs>
-<rect x=".5" y=".5" width="599" height="742" rx="14" fill="#0b0f17" stroke="#263041"/>
+<rect x=".5" y=".5" width="599" height="752" rx="14" fill="#0b0f17" stroke="#263041"/>
 <rect x="30" y="30" width="52" height="5" rx="2.5" fill="#4ade80"/>
 <text x="94" y="40" class="mono" font-size="21" fill="#9aa7ba">2026</text>
-<text x="30" y="88" class="sans" font-size="44" font-weight="700" fill="#eef2f8">balance-car-learning</text>
-<text x="30" y="126" class="sans" font-size="25" fill="#4ade80">Learning project, not original work</text>
-
-<g transform="translate(30 150) scale(1.1489) translate(-690 -34)">
+<text x="30" y="102" class="sans" font-size="44" font-weight="700" fill="#eef2f8">balance-car-learning</text>
+<text x="30" y="140" class="sans" font-size="25" fill="#4ade80">Learning project, not original work</text>
+<rect x="356" y="61.0" width="214" height="50" rx="25.0" fill="#4ade80"/><text x="378" y="94.0" class="sans" font-size="23" font-weight="600" fill="#0b0f17">Watch demo</text><path d="M536 92.0L548 80.0M538 80.0H548V90.0" fill="none" stroke="#0b0f17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(30 160) scale(1.1489) translate(-690 -34)">
 <rect x="690" y="34" width="470" height="292" fill="#111723"/>
 <g clip-path="url(#tray)">
 <path d="M714 264H940" stroke="#7c889b" stroke-width="2"/>
@@ -30,6 +30,6 @@
 <rect x="690" y="34" width="470" height="292" fill="none" stroke="#263041"/>
 <path d="M708 34H690V52" fill="none" stroke="#4ade80" stroke-width="2.5"/><path d="M1142 34H1160V52" fill="none" stroke="#4ade80" stroke-width="2.5"/><path d="M708 326H690V308" fill="none" stroke="#4ade80" stroke-width="2.5"/><path d="M1142 326H1160V308" fill="none" stroke="#4ade80" stroke-width="2.5"/>
 </g>
-<text x="30" y="535" class="sans" font-size="25" fill="#9aa7ba">Followed the Jiangxie Technology balance</text><text x="30" y="571" class="sans" font-size="25" fill="#9aa7ba">car tutorial on an STM32F103: complementary</text><text x="30" y="607" class="sans" font-size="25" fill="#9aa7ba">filter, then angle, speed and turn PID</text><text x="30" y="643" class="sans" font-size="25" fill="#9aa7ba">loops, with adjusted PID gains.</text>
-<rect x="30" y="671" width="134" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="97.0" y="699" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">STM32F103</text><rect x="172" y="671" width="110" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="227.0" y="699" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">MPU6050</text><rect x="290" y="671" width="170" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="375.0" y="699" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Cascaded PID</text><rect x="468" y="671" width="122" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="529.0" y="699" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Learning</text>
+<text x="30" y="545" class="sans" font-size="25" fill="#9aa7ba">Followed the Jiangxie Technology balance</text><text x="30" y="581" class="sans" font-size="25" fill="#9aa7ba">car tutorial on an STM32F103: complementary</text><text x="30" y="617" class="sans" font-size="25" fill="#9aa7ba">filter, then angle, speed and turn PID</text><text x="30" y="653" class="sans" font-size="25" fill="#9aa7ba">loops, tuned and running on my own car.</text>
+<rect x="30" y="681" width="134" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="97.0" y="709" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">STM32F103</text><rect x="172" y="681" width="110" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="227.0" y="709" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">MPU6050</text><rect x="290" y="681" width="170" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="375.0" y="709" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Cascaded PID</text><rect x="468" y="681" width="122" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="529.0" y="709" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Learning</text>
 </svg>
