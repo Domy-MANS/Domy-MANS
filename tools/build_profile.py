@@ -610,7 +610,7 @@ def us_block():
             "by an academic paper.",
         ],
         period="2025",
-        phase=(1, 4),
+        phase=(0, 4),
         cta="Try Us online",
         mobile_panel=us_panel(PY, PH),
     )
@@ -751,7 +751,7 @@ def mans_block():
             "that follows a smooth motion curve.",
         ],
         period="2025",
-        phase=(0, 4),
+        phase=(1, 4),
         cta="Watch video",
         mobile_panel=mans_panel(PY, PH),
         rail="mans-2025",
