@@ -624,44 +624,209 @@ def us_block():
 
 # ---------- balance-car-learning ----------
 def balance_panel(py, ph):
-    """Illustration of a two-wheel car recovering from a push. The motion is drawn, not measured."""
-    dur, n = 12, 72
+    """A 3D model of the car, projected to SVG keyframes. The motion is drawn, not measured.
 
-    def tilt(u):
-        if u < 0.1:
-            return 14 * math.sin(math.pi / 2 * u / 0.1)
-        return 14 * math.exp(-5 * (u - 0.1)) * math.cos(6 * math.pi * (u - 0.1))
+    The car balances, drives away and back on the left stick, then spins on the right stick.
+    Each polygon morphs between projected keyframes. Hidden faces switch off per keyframe, and
+    the wheels sit in two layers so the nearer one draws over the body.
+    """
+    dur, n = 16, 48
+    smooth = lambda x: (lambda u: u * u * (3 - 2 * u))(max(0.0, min(1.0, x)))
 
-    angles = [tilt(k / n) for k in range(n)] + [0]
-    cx, base = PX + 135, py + ph - 88
-    rot = ";".join(f"{a:.2f}" for a in angles)
-    shift = ";".join(f"{a * 1.2:.1f} 0" for a in angles)
-    x0, x1, top, bot = PX + 275, PX + 448, py + 24, py + ph - 58
-    mid = (top + bot) / 2
-    pts = [(x0 + (x1 - x0) * k / n, mid - (bot - top) / 2 * a / 15) for k, a in enumerate(angles)]
-    d = "M" + " L".join(f"{x:.1f} {y:.1f}" for x, y in pts)
-    motion = ";".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    def pose(sec):
+        z = 1.7 * smooth((sec - 3) / 2.5) - 1.7 * smooth((sec - 6.5) / 2.5)
+        lean = 9 * (math.sin(math.pi * smooth((sec - 3) / 2.5)) - math.sin(math.pi * smooth((sec - 6.5) / 2.5)))
+        lean += 2.5 * math.sin(sec * 2.2)
+        yaw = 360 * smooth((sec - 10) / 4)
+        # Moving along z and spinning both turn the wheels.
+        roll_fwd, roll_turn = z / 0.55, math.radians(yaw) * 1.0 / 0.55
+        lv = smooth((sec - 2.8) / 0.4) - smooth((sec - 5.2) / 0.4) - smooth((sec - 6.3) / 0.4) + smooth((sec - 8.7) / 0.4)
+        rh = smooth((sec - 9.8) / 0.4) - smooth((sec - 13.8) / 0.4)
+        return z, math.radians(lean), math.radians(yaw), roll_fwd, roll_turn, lv, rh
+
+    poses = [pose(dur * k / n) for k in range(n)]
+    ground = py + ph - 36 - 26
+    focal, cx = 345, PX + 150
+    cam_h, cam_d, tip = 1.9, 5.0, math.radians(13)
+    axle = 0.55
+
+    def world(p, q):
+        z_off, _, yaw, *_ = q
+        x, y, z = p
+        c, s = math.cos(yaw), math.sin(yaw)
+        return (x * c + z * s, y, -x * s + z * c + z_off)
+
+    def body(p, q):
+        x, y, z = p
+        c, s = math.cos(q[1]), math.sin(q[1])
+        return world((x, axle + y * c - z * s, y * s + z * c), q)
+
+    def camera(w):
+        x, y, z = w[0], w[1] - cam_h, w[2] + cam_d
+        c, s = math.cos(tip), math.sin(tip)
+        return x, y * c + z * s, -y * s + z * c
+
+    def project(w):
+        x, y, z = camera(w)
+        return cx + focal * x / z, ground - 40 - focal * y / z
+
+    def facing(center, normal):
+        return sum(n_ * (c_ - e_) for n_, c_, e_ in zip(normal, center, (0, cam_h, -cam_d))) < 0
+
+    def poly(frames, fill, shown=None, extra=""):
+        rows = [" ".join(f"{x:.1f},{y:.1f}" for x, y in f) for f in frames]
+        values = ";".join(rows + rows[:1])
+        vis = ""
+        if shown is not None:
+            vis = f'<animate attributeName="opacity" dur="{dur}s" repeatCount="indefinite" calcMode="discrete" values="{";".join("1" if v else "0" for v in shown)}"/>'
+        return (
+            f'<polygon points="{rows[0]}" fill="{fill}"{extra}>'
+            f'<animate attributeName="points" dur="{dur}s" repeatCount="indefinite" values="{values}"/>{vis}</polygon>'
+        )
+
+    def face(corners, normal, fill, extra=""):
+        frames, shown = [], []
+        for q in poses:
+            pts = [body(c, q) for c in corners]
+            frames.append([project(w) for w in pts])
+            origin, tip_n = body((0, 0, 0), q), body(normal, q)
+            nrm = tuple(b - a for a, b in zip(origin, tip_n))
+            center = tuple(sum(v) / len(v) for v in zip(*pts))
+            shown.append(facing(center, nrm))
+        return poly(frames, fill, shown, extra)
+
+    def rect(x0, x1, y0, y1, z):
+        return [(x0, y0, z), (x1, y0, z), (x1, y1, z), (x0, y1, z)]
+
+    w, top, low, d = 0.82, 0.62, -0.34, 0.2
+    board, side, edge = "#17382a", "#112a20", "#0e2119"
+    chassis = "".join([
+        face(rect(-w, w, low, top, d), (0, 0, 1), "#14241c", f' stroke="{LINE}"'),
+        face(rect(-0.56, 0.56, low + 0.06, 0.12, d + 0.01), (0, 0, 1), GREEN, ' fill-opacity=".35"'),
+        face([(-w, low, -d), (-w, low, d), (-w, top, d), (-w, top, -d)], (-1, 0, 0), side),
+        face([(w, low, -d), (w, low, d), (w, top, d), (w, top, -d)], (1, 0, 0), side),
+        face([(-w, top, -d), (w, top, -d), (w, top, d), (-w, top, d)], (0, 1, 0), edge),
+        face(rect(-w, w, low, top, -d), (0, 0, -1), board, f' stroke="{GREEN}" stroke-width="1.5"'),
+        face(rect(-0.7, -0.28, -0.24, 0.12, -d - 0.01), (0, 0, -1), BG),
+        face(rect(-0.65, -0.33, -0.16, 0.05, -d - 0.02), (0, 0, -1), GREEN, ' fill-opacity=".8"'),
+        face(rect(-0.2, 0.68, -0.24, 0.08, -d - 0.01), (0, 0, -1), "#2a5a43"),
+        face(rect(0.18, 0.66, 0.2, 0.54, -d - 0.01), (0, 0, -1), "#2a5a43"),
+        face(rect(-0.2, 0.1, 0.22, 0.52, -d - 0.01), (0, 0, -1), "#2a5a43"),
+        face(rect(-0.7, -0.3, 0.26, 0.5, -d - 0.01), (0, 0, -1), "#2a5a43"),
+        face([(-0.03, top, 0), (0.03, top, 0), (0.03, top + 0.62, 0), (-0.03, top + 0.62, 0)], (0, 0, -1), "#0b0f17", f' stroke="{TEXT}" stroke-width=".8"'),
+        face([(-0.03, top, 0), (0.03, top, 0), (0.03, top + 0.62, 0), (-0.03, top + 0.62, 0)], (0, 0, 1), "#0b0f17", f' stroke="{TEXT}" stroke-width=".8"'),
+    ])
+
+    def disc(side_x, radius, count, q):
+        return [project(world((side_x, axle + radius * math.sin(2 * math.pi * i / count), radius * math.cos(2 * math.pi * i / count)), q)) for i in range(count)]
+
+    def hull(points, count=24):
+        """Convex outline of a tyre, resampled to a fixed point count so it can morph."""
+        pts = sorted(set(points))
+        def half(seq):
+            out = []
+            for pt in seq:
+                while len(out) > 1 and (out[-1][0] - out[-2][0]) * (pt[1] - out[-2][1]) - (out[-1][1] - out[-2][1]) * (pt[0] - out[-2][0]) <= 0:
+                    out.pop()
+                out.append(pt)
+            return out[:-1]
+        ring = half(pts) + half(pts[::-1])
+        mx, my = sum(q[0] for q in ring) / len(ring), sum(q[1] for q in ring) / len(ring)
+        result = []
+        for i in range(count):
+            a = 2 * math.pi * i / count
+            dx, dy = math.cos(a), math.sin(a)
+            best = 0.0
+            for j, b in enumerate(ring):
+                c = ring[(j + 1) % len(ring)]
+                ex, ey = c[0] - b[0], c[1] - b[1]
+                den = dx * ey - dy * ex
+                if abs(den) < 1e-9:
+                    continue
+                u = ((b[0] - mx) * ey - (b[1] - my) * ex) / den
+                v = ((b[0] - mx) * dy - (b[1] - my) * dx) / den
+                if u > 0 and -1e-6 <= v <= 1 + 1e-6:
+                    best = max(best, u)
+            result.append((mx + best * dx, my + best * dy))
+        return result
+
+    def wheel(sign, name):
+        tread = [hull(disc(sign * 0.86, 0.55, 18, q) + disc(sign * 1.17, 0.55, 18, q)) for q in poses]
+        out = poly(tread, "#1b2430", None, f' stroke="{GREY}" stroke-width="1.5"')
+        outer = []
+        for q in poses:
+            center, tip_n = world((sign * 1.17, axle, 0), q), world((sign * 2.17, axle, 0), q)
+            outer.append(facing(center, tuple(b - a for a, b in zip(center, tip_n))))
+        out += poly([disc(sign * 1.17, 0.5, 16, q) for q in poses], "#161d28", outer)
+        out += poly([disc(sign * 1.175, 0.3, 10, q) for q in poses], GREEN, outer, ' fill-opacity=".5"')
+        spokes = []
+        for q in poses:
+            ang = q[3] + sign * q[4]
+            c, s = math.cos(ang), math.sin(ang)
+            pts = [(-0.27, -0.035), (0.27, -0.035), (0.27, 0.035), (-0.27, 0.035)]
+            spokes.append([project(world((sign * 1.18, axle + u * s + v * c, u * c - v * s), q)) for u, v in pts])
+        out += poly(spokes, TEXT, outer)
+        return f'<g id="{name}">{out}</g>'
+
+    def wheel_layer(name, sign, near):
+        shown = []
+        for q in poses:
+            wheel_z = camera(world((sign, axle, 0), q))[2]
+            body_z = camera(world((0, axle, 0), q))[2]
+            shown.append((wheel_z < body_z) == near)
+        values = ";".join("1" if v else "0" for v in shown)
+        return f'<use href="#{name}"><animate attributeName="opacity" dur="{dur}s" repeatCount="indefinite" calcMode="discrete" values="{values}"/></use>'
+
+    tag = f"b{py}"
+    defs = f"<defs>{wheel(-1, tag + 'l')}{wheel(1, tag + 'r')}</defs>"
+    shadow_rows = []
+    for q in poses:
+        x, y = project(world((0, 0, 0), q))
+        shadow_rows.append(f"{x:.1f} {y:.1f}")
+    shadow = (
+        f'<ellipse cx="0" cy="0" rx="72" ry="13" fill="#000" fill-opacity=".38">'
+        f'<animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" values="{";".join(shadow_rows + shadow_rows[:1])}"/></ellipse>'
+    )
+
+    # Target steps follow the commands. The second line is a simulated second-order response.
+    px0, px1, py0, py1 = PX + 305, PX + 448, py + 24, py + ph - 58
+    samples, y, v, target, actual = 96, 0.0, 0.0, [], []
+    for k in range(samples + 1):
+        sec = dur * k / samples
+        q = pose(sec)
+        goal = q[5] + q[6]
+        for _ in range(10):
+            v += (26 * (goal - y) - 4.2 * v) * (dur / samples / 10)
+            y += v * (dur / samples / 10)
+        target.append(goal)
+        actual.append(y + 0.035 * math.sin(sec * 19) + 0.025 * math.sin(sec * 31))
+    to_xy = lambda k, val: (px0 + (px1 - px0) * k / samples, (py0 + py1) / 2 - (py1 - py0) / 2 * val / 1.35)
+    line = lambda vals: "M" + " L".join("{:.1f} {:.1f}".format(*to_xy(k, val)) for k, val in enumerate(vals))
+    cursor = ";".join("{:.1f},{:.1f}".format(*to_xy(k, val)) for k, val in enumerate(actual))
+    clip_id = f"plot{py}"
+    plot = (
+        f'<rect x="{px0}" y="{py0}" width="{px1 - px0}" height="{py1 - py0}" fill="{BG}" stroke="{LINE}"/>'
+        f'<path d="M{px0} {(py0 + py1) / 2}H{px1}" stroke="{LINE}" stroke-dasharray="4 4"/>'
+        f'<path d="{line(target)}" fill="none" stroke="{MUTED}" stroke-width="2" stroke-dasharray="5 5"/>'
+        f'<clipPath id="{clip_id}"><rect x="{px0}" y="{py0 - 2}" width="0" height="{py1 - py0 + 4}">'
+        f'<animate attributeName="width" dur="{dur}s" repeatCount="indefinite" calcMode="linear" values="0;{px1 - px0}"/></rect></clipPath>'
+        f'<path clip-path="url(#{clip_id})" d="{line(actual)}" fill="none" stroke="{GREEN}" stroke-width="2"/>'
+        f'<circle r="5" fill="{GREEN}" stroke="{BG}" stroke-width="2"><animateMotion dur="{dur}s" repeatCount="indefinite" calcMode="linear" values="{cursor}"/></circle>'
+        f'<text x="{px0}" y="{py0 - 8}" class="mono" font-size="13" fill="{MUTED}">target / simulated</text>'
+    )
     steps = [
-        ("01 READ  MPU6050 tilt", 0.0, 0.25),
-        ("02 FILTER  complementary", 0.25, 0.5),
-        ("03 ANGLE PID  motor PWM", 0.5, 0.75),
-        ("04 SPEED + TURN  outer loops", 0.75, 1.0),
+        ("01 BALANCE  angle PID", 0.0, 3 / 16),
+        ("02 DRIVE  speed PID", 3 / 16, 10 / 16),
+        ("03 TURN  steering PID", 10 / 16, 14 / 16),
+        ("01 BALANCE  angle PID", 14 / 16, 1.0),
     ]
-    return f"""<g clip-path="url(#tray)">
-<path d="M{PX + 24} {base + 26}H{PX + 250}" stroke="{GREY}" stroke-width="2"/>
-<g transform="translate({cx} {base})"><g><animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" values="{shift}"/>
-<g><animateTransform attributeName="transform" type="rotate" dur="{dur}s" repeatCount="indefinite" values="{rot}"/>
-<rect x="-23" y="-128" width="46" height="118" rx="7" fill="{GREEN}" fill-opacity=".22" stroke="{GREEN}" stroke-width="2"/>
-<rect x="-13" y="-114" width="26" height="24" rx="3" fill="{PANEL}" stroke="{TEXT}" stroke-width="2"/>
-<path d="M-11 -62H11M-11 -46H11M-11 -30H11" stroke="{GREEN}" stroke-width="2.5" stroke-linecap="round"/>
-</g>
-<circle r="25" fill="{PANEL}" stroke="{TEXT}" stroke-width="3"/><circle r="6" fill="{GREEN}"/>
-</g></g>
-<rect x="{x0}" y="{top}" width="{x1 - x0}" height="{bot - top}" fill="{BG}" stroke="{LINE}"/>
-<path d="M{x0} {mid}H{x1}" stroke="{LINE}" stroke-dasharray="4 4"/>
-<path d="{d}" fill="none" stroke="{MUTED}" stroke-width="2"/>
-<text x="{x0}" y="{top - 8}" class="mono" font-size="13" fill="{MUTED}">tilt angle (illustration)</text>
-<circle r="6" fill="{GREEN}" stroke="{BG}" stroke-width="2"><animateMotion dur="{dur}s" repeatCount="indefinite" calcMode="linear" values="{motion}"/></circle>
+    layers = (
+        wheel_layer(tag + "l", -1, False) + wheel_layer(tag + "r", 1, False) + chassis + wheel_layer(tag + "l", -1, True) + wheel_layer(tag + "r", 1, True)
+    )
+    return f"""{defs}<g clip-path="url(#tray)">
+{shadow}
+{layers}
+{plot}
 </g>
 <rect x="{PX}" y="{py + ph - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
 {status_steps(steps, dur, GREEN, py, ph)}"""
