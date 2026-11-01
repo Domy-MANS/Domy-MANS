@@ -611,6 +611,7 @@ def us_block():
         ],
         period="2025",
         phase=(0, 4),
+        rail="us",
         show_year=False,
         cta="Try Us online",
         mobile_panel=us_panel(PY, PH),
@@ -686,7 +687,7 @@ def balance_block():
         phase=(2, 4),
         cta="Watch demo",
         mobile_panel=balance_panel(PY, PH),
-        rail="balance-2026",
+        rail="balance",
         show_year=False,
     )
 
