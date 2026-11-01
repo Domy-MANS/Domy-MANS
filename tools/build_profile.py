@@ -42,7 +42,7 @@ def grid(height):
     )
 
 
-def status_steps(steps, dur, color):
+def status_steps(steps, dur, color, py=PY, ph=PH):
     out = []
     for label, a, b in steps:
         if a == 0:
@@ -52,7 +52,7 @@ def status_steps(steps, dur, color):
         else:
             vals, times = [0, 0, 1, 1, 0, 0], [0, a, a + 0.001, b, b + 0.001, 1]
         out.append(
-            f'<text x="{PX + 16}" y="{PY + PH - 12}" class="mono" font-size="17" fill="{color}" opacity="0">{label}'
+            f'<text x="{PX + 16}" y="{py + ph - 12}" class="mono" font-size="17" fill="{color}" opacity="0">{label}'
             + anim("opacity", dur, vals, times)
             + "</text>"
         )
@@ -116,7 +116,7 @@ CTA_SHARES = (74.5, 14.5, 3)  # left of button, button, right of button
 MOBILE_CTA_SHARES = (54, 34, 4)
 DESKTOP_ROWS = (46, 94)  # y range of the button row; button is 44 tall
 MOBILE_ROWS = (56, 116)  # y range of the button row; button is 50 tall
-CTA_DROP = 66  # how far the button row pushes the panel and text down on a desktop card
+CTA_PY, CTA_PH = 100, 226  # desktop panel below the button row; same card height and panel bottom
 
 
 def write_rail(fname, card_w, height, x, node_y, accent, year, plays_first, rows=None):
@@ -164,27 +164,30 @@ def write_cta_card(stem, tag, width, height, rows, shares, static, full, label, 
     write_crop(f"{stem}-bottom{tag}.svg", 0, bottom, width, height - bottom, full, label)
 
 
-def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobile_lines, period, plays_first=False, cta=None):
-    drop = CTA_DROP if cta else 0
-    card_h = H + drop
+def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobile_lines, period, plays_first=False, cta=None, mobile_panel=None):
+    card_h = H
+    py, ph = (CTA_PY, CTA_PH) if cta else (PY, PH)
     chip_svg, x = [], 58
     for c in chips:
         w = 10 * len(c) + 28
         chip_svg.append(
-            f'<rect x="{x}" y="{276 + drop}" width="{w}" height="36" rx="18" fill="#182130" stroke="{LINE}"/>'
-            f'<text x="{x + w / 2}" y="{300 + drop}" text-anchor="middle" class="mono" font-size="16" fill="{TEXT}">{c}</text>'
+            f'<rect x="{x}" y="276" width="{w}" height="36" rx="18" fill="#182130" stroke="{LINE}"/>'
+            f'<text x="{x + w / 2}" y="300" text-anchor="middle" class="mono" font-size="16" fill="{TEXT}">{c}</text>'
         )
         x += w + 10
     desc = "".join(
-        f'<text x="58" y="{176 + drop + i * 31}" class="sans" font-size="21" fill="{MUTED}">{l}</text>'
+        f'<text x="58" y="{176 + i * 31}" class="sans" font-size="21" fill="{MUTED}">{l}</text>'
         for i, l in enumerate(desc_lines)
     )
-    brackets = "".join(
-        f'<path d="M{x + 18 * sx} {y}H{x}V{y + 18 * sy}" fill="none" stroke="{accent}" stroke-width="2.5"/>'
-        for x, y, sx, sy in [
-            (PX, PY, 1, 1), (PX + PW, PY, -1, 1), (PX, PY + PH, 1, -1), (PX + PW, PY + PH, -1, -1),
-        ]
-    )
+    def corner_brackets(top, height):
+        return "".join(
+            f'<path d="M{x + 18 * sx} {y}H{x}V{y + 18 * sy}" fill="none" stroke="{accent}" stroke-width="2.5"/>'
+            for x, y, sx, sy in [
+                (PX, top, 1, 1), (PX + PW, top, -1, 1), (PX, top + height, 1, -1), (PX + PW, top + height, -1, -1),
+            ]
+        )
+
+    brackets = corner_brackets(py, ph)
     bar_y, title_y, subtitle_y = (30, 86, 124) if cta else (44, 98, 132)
     static = f"""<rect x=".5" y=".5" width="{W - 1}" height="{card_h - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
 <rect x="58" y="{bar_y}" width="52" height="5" rx="2.5" fill="{accent}"/>
@@ -194,20 +197,18 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
 {desc}
 {''.join(chip_svg)}"""
     full = f"""{static}
-<g transform="translate(0 {drop})">
-<defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
-<rect x="{PX}" y="{PY}" width="{PW}" height="{PH}" fill="{PANEL}"/>
+<defs><clipPath id="tray"><rect x="{PX}" y="{py}" width="{PW}" height="{ph}"/></clipPath></defs>
+<rect x="{PX}" y="{py}" width="{PW}" height="{ph}" fill="{PANEL}"/>
 {panel}
-<rect x="{PX}" y="{PY}" width="{PW}" height="{PH}" fill="none" stroke="{LINE}"/>
-{brackets}
-</g>"""
+<rect x="{PX}" y="{py}" width="{PW}" height="{ph}" fill="none" stroke="{LINE}"/>
+{brackets}"""
     if cta:
         write_cta_card(fname[:-4], "", W, card_h, DESKTOP_ROWS, CTA_SHARES, static, full, label, cta)
         write_rail(f"timeline-{period}.svg", W, card_h, 82, sum(DESKTOP_ROWS) // 2, accent, period, plays_first, DESKTOP_ROWS)
     else:
         write_crop(fname, 0, 0, W, card_h, full, label)
         write_rail(f"timeline-{period}.svg", W, card_h, 82, 84, accent, period, plays_first)
-    mobile_block(fname.replace(".svg", "-mobile.svg"), title, subtitle, mobile_lines, chips, panel, brackets, accent, label, period, plays_first, cta)
+    mobile_block(fname.replace(".svg", "-mobile.svg"), title, subtitle, mobile_lines, chips, mobile_panel or panel, corner_brackets(PY, PH), accent, label, period, plays_first, cta)
 
 
 def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, label, period, plays_first=False, cta=None):
@@ -456,25 +457,28 @@ def logo_pixels(x0, y0, cell, keys):
 
 
 # ---------- Us ----------
-def us_block():
+def us_panel(py, ph):
+    """The Us animation for a panel at py. A panel shorter than PH gets a tighter layout."""
+    compact = ph < PH
+    row_a, row_b = (46, 126) if compact else (82, 195)
     rng = random.Random(16)
     dur = 18
     # FindUs 0-.26, SeeU .26-.48, HelpU .48-.72, Us .72-1
     groups = [
-        (PX + 100, PY + 82, BLUE, "sad / lonely"),
-        (PX + 370, PY + 82, YELLOW, "happy"),
-        (PX + 100, PY + 195, PURPLE, "anxious"),
+        (PX + 100, py + row_a, BLUE, "sad / lonely"),
+        (PX + 370, py + row_a, YELLOW, "happy"),
+        (PX + 100, py + row_b, PURPLE, "anxious"),
     ]
-    cell = 5.8
-    tile_w, tile_h = 191, 176
-    tile_x, tile_y = PX + (PW - tile_w) / 2, PY + 14
+    cell = 4.4 if compact else 5.8
+    tile_w, tile_h = 191, 134 if compact else 176
+    tile_x, tile_y = PX + (PW - tile_w) / 2, py + 14
     art_x = tile_x + (tile_w - 36 * cell) / 2
     art_y = tile_y + (tile_h - 22 * cell) / 2
     cx, cy = round(art_x + 10 * cell), round(art_y + 11 * cell)
     letters, placed = [], []
     for gi in range(21):
         gx, gy, color, _ = groups[gi % 3]
-        sx, sy = rng.uniform(PX + 24, PX + PW - 24), rng.uniform(PY + 30, PY + PH - 50)
+        sx, sy = rng.uniform(PX + 24, PX + PW - 24), rng.uniform(py + 30, py + ph - 50)
         for _ in range(200):
             tx, ty = gx + rng.uniform(-58, 58), gy + rng.uniform(-12, 28)
             if all(math.dist((tx, ty), q) > 25 for q in placed):
@@ -508,7 +512,7 @@ def us_block():
                 + "</path>"
             )
 
-    bx, by = PX + 370, PY + 195
+    bx, by = PX + 370, py + row_b
     bot_op = anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.48, 0.51, 0.7, 0.73, 1])
     links = []
     for i, (gx, gy, _, _) in enumerate(groups):
@@ -523,8 +527,8 @@ def us_block():
 <circle cx="{bx - 9}" cy="{by - 3}" r="3.5" fill="{PINK}"/><circle cx="{bx + 9}" cy="{by - 3}" r="3.5" fill="{PINK}"/>
 <path d="M{bx - 8} {by + 8}Q{bx} {by + 15} {bx + 8} {by + 8}" stroke="{PINK}" stroke-width="2.5" fill="none" stroke-linecap="round"/>
 <text x="{bx}" y="{by + 42}" text-anchor="middle" class="mono" font-size="14" fill="{PINK}">UsBot</text>
-<rect x="{PX + 178}" y="{PY + 208}" width="142" height="32" rx="12" fill="#232b3a" stroke="{LINE}"/>
-<text x="{PX + 249}" y="{PY + 229}" text-anchor="middle" class="sans" font-size="15" fill="{TEXT}">I'm here for you.</text>
+<rect x="{PX + 178}" y="{by + 13}" width="142" height="32" rx="12" fill="#232b3a" stroke="{LINE}"/>
+<text x="{PX + 249}" y="{by + 34}" text-anchor="middle" class="sans" font-size="15" fill="{TEXT}">I'm here for you.</text>
 </g>"""
     tile = (
         f'<g opacity="0">' + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.71, 0.74, 0.95, 0.98, 1])
@@ -533,7 +537,7 @@ def us_block():
     )
     arcs = []
     left_tip, right_tip = art_x + 3 * cell, art_x + 16.5 * cell
-    for lift in (12, 30, 48):
+    for lift in (8, 18, 28) if compact else (12, 30, 48):
         arcs.append(
             f'<path d="M{left_tip:.1f} {art_y:.1f}C{left_tip + 8:.1f} {art_y - lift:.1f} {right_tip - 8:.1f} {art_y - lift:.1f} {right_tip:.1f} {art_y:.1f}" '
             f'fill="none" stroke="#8a95a6" stroke-width="2" stroke-dasharray="5 6">'
@@ -546,7 +550,7 @@ def us_block():
     word = (
         f'<g opacity="0">' + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.825, 0.84, 0.95, 0.98, 1])
         + f'<g shape-rendering="crispEdges">{logo_pixels(art_x, art_y, cell, "S")}</g>'
-        + f'<text x="{tile_x + tile_w / 2}" y="{tile_y + tile_h + 32}" text-anchor="middle" class="sans" font-size="19" fill="{TEXT}">Us is many U, U belong to Us</text></g>'
+        + f'<text x="{tile_x + tile_w / 2}" y="{tile_y + tile_h + (18 if compact else 32)}" text-anchor="middle" class="sans" font-size="19" fill="{TEXT}">Us is many U, U belong to Us</text></g>'
     )
     steps = [
         ("01 FINDU  match into groups", 0.0, 0.26),
@@ -554,7 +558,7 @@ def us_block():
         ("03 HELPU  local AI companion", 0.48, 0.72),
         ("04 US  many U become Us", 0.72, 1.0),
     ]
-    panel = f"""<g clip-path="url(#tray)">
+    return f"""<g clip-path="url(#tray)">
 {''.join(labels)}
 {tile}
 {field}
@@ -563,8 +567,11 @@ def us_block():
 {bot}
 {word}
 </g>
-<rect x="{PX}" y="{PY + PH - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
-{status_steps(steps, dur, PINK)}"""
+<rect x="{PX}" y="{py + ph - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
+{status_steps(steps, dur, PINK, py, ph)}"""
+
+
+def us_block():
     block(
         "card-us.svg",
         "Us",
@@ -575,7 +582,7 @@ def us_block():
             "Built solo and backed by an academic paper.",
         ],
         ["JavaScript", "Node.js", "Ollama", "Research"],
-        panel,
+        us_panel(CTA_PY, CTA_PH),
         PINK,
         "Us overview: scattered U letters are matched into groups, share emotions, get support from the UsBot AI companion, then get pulled together by a magnet-shaped U to form the Us logo.",
         [
@@ -587,6 +594,7 @@ def us_block():
         period="2025",
         plays_first=True,
         cta="Try Us online",
+        mobile_panel=us_panel(PY, PH),
     )
 
 
