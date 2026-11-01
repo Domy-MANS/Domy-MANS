@@ -337,17 +337,19 @@ def serpentine(x0, y0, x1, y1, rows):
     return pts
 
 
-def vision_block():
+def vision_panel(py, ph):
+    """The vision animation for a panel at py. A panel shorter than PH gets flatter clusters."""
+    sy = (ph - 36) / (PH - 36)
     rng = random.Random(713)
     dur, start, end = 12, 0.2, 0.76
-    clusters = [(PX + 130, PY + 95, 82, 50), (PX + 335, PY + 175, 86, 56)]
+    clusters = [(PX + 130, py + 95 * sy, 82, 50 * sy), (PX + 335, py + 175 * sy, 86, 56 * sy)]
     route = []
     for cx, cy, rx, ry in clusters:
         route += serpentine(cx - rx, cy - ry, cx + rx, cy + ry, 5)
 
     frass = []
     for _ in range(95):
-        x, y = rng.uniform(PX + 14, PX + PW - 14), rng.uniform(PY + 14, PY + PH - 42)
+        x, y = rng.uniform(PX + 14, PX + PW - 14), rng.uniform(py + 14, py + ph - 42)
         if any(((x - c[0]) / (c[2] + 14)) ** 2 + ((y - c[1]) / (c[3] + 14)) ** 2 < 1 for c in clusters):
             continue
         frass.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{rng.uniform(1.3, 2.6):.1f}"/>')
@@ -387,12 +389,16 @@ def vision_block():
 <animateMotion dur="{dur}s" repeatCount="indefinite" path="{d}" keyPoints="0;0;1;1" keyTimes="0;{start};{end};1" calcMode="linear"/>
 {anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, start - 0.01, start, end, end + 0.01, 1])}
 </g>
-<rect x="{PX}" y="{PY - 70}" width="{PW}" height="70" fill="url(#scan)">
-<animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" values="0 0;0 {PH + 70};0 {PH + 70}" keyTimes="0;0.18;1"/>
+<rect x="{PX}" y="{py - 70}" width="{PW}" height="70" fill="url(#scan)">
+<animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" values="0 0;0 {ph + 70};0 {ph + 70}" keyTimes="0;0.18;1"/>
 </rect>
 </g>
-<rect x="{PX}" y="{PY + PH - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
-{status_steps(steps, dur, YELLOW)}"""
+<rect x="{PX}" y="{py + ph - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
+{status_steps(steps, dur, YELLOW, py, ph)}"""
+    return panel
+
+
+def vision_block():
     block(
         "card-vision.svg",
         "insect-frass-vision",
@@ -403,7 +409,7 @@ def vision_block():
             "and a Siemens S7 PLC drives the machine to pick them up.",
         ],
         ["YOLO11n-seg", "Snap7", "Siemens S7", "Python"],
-        panel,
+        vision_panel(CTA_PY, CTA_PH),
         YELLOW,
         "insect-frass-vision overview: insects and frass are segmented from a camera view, a serpentine suction path is planned, written to a Siemens S7 PLC, and the insects are picked up along the path.",
         [
@@ -414,6 +420,8 @@ def vision_block():
         ],
         period="2026",
         phase=(3, 4),
+        cta="Watch demo",
+        mobile_panel=vision_panel(PY, PH),
     )
 
 

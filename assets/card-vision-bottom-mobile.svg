@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 743" preserveAspectRatio="none" width="600" height="743" role="img" aria-label="insect-frass-vision overview: insects and frass are segmented from a camera view, a serpentine suction path is planned, written to a Siemens S7 PLC, and the insects are picked up along the path.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 116 600 637" preserveAspectRatio="none" width="600" height="637" role="img" aria-label="insect-frass-vision overview: insects and frass are segmented from a camera view, a serpentine suction path is planned, written to a Siemens S7 PLC, and the insects are picked up along the path.">
 <style>.sans{font-family:'Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
 <defs><clipPath id="tray"><rect x="690" y="34" width="470" height="292"/></clipPath></defs>
-<rect x=".5" y=".5" width="599" height="742" rx="14" fill="#0b0f17" stroke="#263041"/>
+<rect x=".5" y=".5" width="599" height="752" rx="14" fill="#0b0f17" stroke="#263041"/>
 <rect x="30" y="30" width="52" height="5" rx="2.5" fill="#ffd23f"/>
 <text x="94" y="40" class="mono" font-size="21" fill="#9aa7ba">2026</text>
-<text x="30" y="88" class="sans" font-size="44" font-weight="700" fill="#eef2f8">insect-frass-vision</text>
-<text x="30" y="126" class="sans" font-size="25" fill="#ffd23f">Vision-guided insect and frass separation</text>
-
-<g transform="translate(30 150) scale(1.1489) translate(-690 -34)">
+<text x="30" y="102" class="sans" font-size="44" font-weight="700" fill="#eef2f8">insect-frass-vision</text>
+<text x="30" y="140" class="sans" font-size="25" fill="#ffd23f">Vision-guided insect and frass separation</text>
+<rect x="356" y="61.0" width="214" height="50" rx="25.0" fill="#ffd23f"/><text x="378" y="94.0" class="sans" font-size="23" font-weight="600" fill="#0b0f17">Watch demo</text><path d="M536 92.0L548 80.0M538 80.0H548V90.0" fill="none" stroke="#0b0f17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(30 160) scale(1.1489) translate(-690 -34)">
 <rect x="690" y="34" width="470" height="292" fill="#111723"/>
 <defs><linearGradient id="scan" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ffd23f" stop-opacity="0"/><stop offset="1" stop-color="#ffd23f" stop-opacity=".35"/></linearGradient></defs>
 <g clip-path="url(#tray)">
@@ -30,6 +30,6 @@
 <rect x="690" y="34" width="470" height="292" fill="none" stroke="#263041"/>
 <path d="M708 34H690V52" fill="none" stroke="#ffd23f" stroke-width="2.5"/><path d="M1142 34H1160V52" fill="none" stroke="#ffd23f" stroke-width="2.5"/><path d="M708 326H690V308" fill="none" stroke="#ffd23f" stroke-width="2.5"/><path d="M1142 326H1160V308" fill="none" stroke="#ffd23f" stroke-width="2.5"/>
 </g>
-<text x="30" y="535" class="sans" font-size="25" fill="#9aa7ba">Insects cluster on their own. A camera and</text><text x="30" y="571" class="sans" font-size="25" fill="#9aa7ba">YOLO11n-seg find them, a suction path is</text><text x="30" y="607" class="sans" font-size="25" fill="#9aa7ba">planned through each cluster, and a Siemens</text><text x="30" y="643" class="sans" font-size="25" fill="#9aa7ba">S7 PLC drives the machine to pick them up.</text>
-<rect x="30" y="671" width="158" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="109.0" y="699" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">YOLO11n-seg</text><rect x="196" y="671" width="86" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="239.0" y="699" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Snap7</text><rect x="290" y="671" width="146" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="363.0" y="699" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Siemens S7</text><rect x="444" y="671" width="98" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="493.0" y="699" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Python</text>
+<text x="30" y="545" class="sans" font-size="25" fill="#9aa7ba">Insects cluster on their own. A camera and</text><text x="30" y="581" class="sans" font-size="25" fill="#9aa7ba">YOLO11n-seg find them, a suction path is</text><text x="30" y="617" class="sans" font-size="25" fill="#9aa7ba">planned through each cluster, and a Siemens</text><text x="30" y="653" class="sans" font-size="25" fill="#9aa7ba">S7 PLC drives the machine to pick them up.</text>
+<rect x="30" y="681" width="158" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="109.0" y="709" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">YOLO11n-seg</text><rect x="196" y="681" width="86" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="239.0" y="709" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Snap7</text><rect x="290" y="681" width="146" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="363.0" y="709" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Siemens S7</text><rect x="444" y="681" width="98" height="42" rx="21" fill="#182130" stroke="#263041"/><text x="493.0" y="709" text-anchor="middle" class="mono" font-size="20" fill="#eef2f8">Python</text>
 </svg>
