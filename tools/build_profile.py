@@ -138,9 +138,14 @@ def write_rail(fname, card_w, height, x, node_y, accent, year, plays_first, rows
 
 
 def write_crop(fname, x, y, w, h, body, label):
-    """One slice of a card: the same drawing seen through a smaller viewBox."""
+    """One slice of a card: the same drawing seen through a smaller viewBox.
+
+    WebKit rounds an SVG image's height down to whole pixels. With the default
+    preserveAspectRatio a short slice then shrinks and leaves bars at its sides, so
+    slices stretch to fill their box instead; the distortion is at most one pixel.
+    """
     x, y, w, h = round(x, 2), round(y, 2), round(w, 2), round(h, 2)
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x} {y} {w} {h}" width="{w}" height="{h}" role="img" aria-label="{label}">
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x} {y} {w} {h}" preserveAspectRatio="none" width="{w}" height="{h}" role="img" aria-label="{label}">
 {STYLE}
 {body}
 </svg>"""
