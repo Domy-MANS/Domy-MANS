@@ -286,7 +286,7 @@ def header_mobile():
 <text x="28" y="108" class="sans" font-size="84" font-weight="700" fill="{TEXT}" letter-spacing="-1">Domy Yu</text>
 <text x="30" y="166" class="sans" font-size="31" fill="{TEXT}">Machines that see.</text>
 <text x="30" y="206" class="sans" font-size="31" fill="{TEXT}">Software that connects.</text>
-<text x="30" y="258" class="mono" font-size="22" fill="{YELLOW}">vision / automation / full-stack</text>
+<text x="30" y="258" class="mono" font-size="20" fill="{YELLOW}">vision / automation / embedded / full-stack</text>
 </svg>"""
     (OUT / "assets/header-mobile.svg").write_text(svg, encoding="utf-8")
 
@@ -306,7 +306,7 @@ def header():
 </g>
 <text x="56" y="106" class="sans" font-size="76" font-weight="700" fill="{TEXT}" letter-spacing="-1">Domy Yu</text>
 <text x="58" y="152" class="sans" font-size="27" fill="{TEXT}">Machines that see. Software that connects.</text>
-<text x="58" y="190" class="mono" font-size="17" fill="{YELLOW}">vision / automation / full-stack</text>
+<text x="58" y="190" class="mono" font-size="17" fill="{YELLOW}">vision / automation / embedded / full-stack</text>
 </svg>"""
     (OUT / "assets/header.svg").write_text(svg, encoding="utf-8")
 
