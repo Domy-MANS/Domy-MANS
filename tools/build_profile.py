@@ -222,7 +222,11 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
 def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, label, period, phase, cta=None, rail=None):
     rail = rail or period
     mw, scale = 600, 540 / PW
-    title_y, subtitle_y, panel_top = (102, 140, 160) if cta else (88, 126, 150)
+    if cta and len(title) > 10:
+        # A long title would run under the button, so it starts below the button row.
+        title_y, subtitle_y, panel_top = (168, 206, 226)
+    else:
+        title_y, subtitle_y, panel_top = (102, 140, 160) if cta else (88, 126, 150)
     panel_h = PH * scale
     desc_top = panel_top + panel_h + 50
     chip_y = desc_top + 36 * (len(lines) - 1) + 28
