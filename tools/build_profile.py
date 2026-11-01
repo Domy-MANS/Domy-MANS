@@ -413,7 +413,7 @@ def vision_block():
             "S7 PLC drives the machine to pick them up.",
         ],
         period="2026",
-        phase=(2, 3),
+        phase=(3, 4),
     )
 
 
@@ -602,9 +602,80 @@ def us_block():
             "by an academic paper.",
         ],
         period="2025",
-        phase=(1, 3),
+        phase=(1, 4),
         cta="Try Us online",
         mobile_panel=us_panel(PY, PH),
+    )
+
+
+# ---------- balance-car-learning ----------
+def balance_panel(py, ph):
+    """Illustration of a two-wheel car recovering from a push. The motion is drawn, not measured."""
+    dur, n = 12, 72
+
+    def tilt(u):
+        if u < 0.1:
+            return 14 * math.sin(math.pi / 2 * u / 0.1)
+        return 14 * math.exp(-5 * (u - 0.1)) * math.cos(6 * math.pi * (u - 0.1))
+
+    angles = [tilt(k / n) for k in range(n)] + [0]
+    cx, base = PX + 135, py + ph - 88
+    rot = ";".join(f"{a:.2f}" for a in angles)
+    shift = ";".join(f"{a * 1.2:.1f} 0" for a in angles)
+    x0, x1, top, bot = PX + 275, PX + 448, py + 24, py + ph - 58
+    mid = (top + bot) / 2
+    pts = [(x0 + (x1 - x0) * k / n, mid - (bot - top) / 2 * a / 15) for k, a in enumerate(angles)]
+    d = "M" + " L".join(f"{x:.1f} {y:.1f}" for x, y in pts)
+    motion = ";".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    steps = [
+        ("01 READ  MPU6050 tilt", 0.0, 0.25),
+        ("02 FILTER  complementary", 0.25, 0.5),
+        ("03 ANGLE PID  motor PWM", 0.5, 0.75),
+        ("04 SPEED + TURN  outer loops", 0.75, 1.0),
+    ]
+    return f"""<g clip-path="url(#tray)">
+<path d="M{PX + 24} {base + 26}H{PX + 250}" stroke="{GREY}" stroke-width="2"/>
+<g transform="translate({cx} {base})"><g><animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" values="{shift}"/>
+<g><animateTransform attributeName="transform" type="rotate" dur="{dur}s" repeatCount="indefinite" values="{rot}"/>
+<rect x="-23" y="-128" width="46" height="118" rx="7" fill="{GREEN}" fill-opacity=".22" stroke="{GREEN}" stroke-width="2"/>
+<rect x="-13" y="-114" width="26" height="24" rx="3" fill="{PANEL}" stroke="{TEXT}" stroke-width="2"/>
+<path d="M-11 -62H11M-11 -46H11M-11 -30H11" stroke="{GREEN}" stroke-width="2.5" stroke-linecap="round"/>
+</g>
+<circle r="25" fill="{PANEL}" stroke="{TEXT}" stroke-width="3"/><circle r="6" fill="{GREEN}"/>
+</g></g>
+<rect x="{x0}" y="{top}" width="{x1 - x0}" height="{bot - top}" fill="{BG}" stroke="{LINE}"/>
+<path d="M{x0} {mid}H{x1}" stroke="{LINE}" stroke-dasharray="4 4"/>
+<path d="{d}" fill="none" stroke="{MUTED}" stroke-width="2"/>
+<text x="{x0}" y="{top - 8}" class="mono" font-size="13" fill="{MUTED}">tilt angle (illustration)</text>
+<circle r="6" fill="{GREEN}" stroke="{BG}" stroke-width="2"><animateMotion dur="{dur}s" repeatCount="indefinite" calcMode="linear" values="{motion}"/></circle>
+</g>
+<rect x="{PX}" y="{py + ph - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
+{status_steps(steps, dur, GREEN, py, ph)}"""
+
+
+def balance_block():
+    block(
+        "card-balance.svg",
+        "balance-car-learning",
+        "Learning project, not original work",
+        [
+            "Followed the Jiangxie Technology balance car tutorial on",
+            "an STM32F103: complementary filter, then angle, speed",
+            "and turn PID loops, with adjusted PID gains.",
+        ],
+        ["STM32F103", "MPU6050", "Cascaded PID", "Learning"],
+        balance_panel(PY, PH),
+        GREEN,
+        "balance-car-learning overview: an illustration of a two-wheel car recovering from a push while the firmware reads tilt, filters it, and runs cascaded PID loops. A learning project based on the Jiangxie Technology tutorial.",
+        [
+            "Followed the Jiangxie Technology balance",
+            "car tutorial on an STM32F103: complementary",
+            "filter, then angle, speed and turn PID",
+            "loops, with adjusted PID gains.",
+        ],
+        period="2026",
+        phase=(2, 4),
+        rail="balance-2026",
     )
 
 
@@ -670,7 +741,7 @@ def mans_block():
             "that follows a smooth motion curve.",
         ],
         period="2025",
-        phase=(0, 3),
+        phase=(0, 4),
         cta="Watch video",
         mobile_panel=mans_panel(PY, PH),
         rail="mans-2025",
@@ -680,5 +751,6 @@ def mans_block():
 header()
 header_mobile()
 vision_block()
+balance_block()
 us_block()
 mans_block()
