@@ -701,12 +701,17 @@ def mans_panel(py, ph):
     """Elbow following the firmware trajectory: 45 - 44 cos(2 pi 0.1 t) degrees, 10 s period."""
     dur, n = 10, 40
     angles = [45 - 44 * math.cos(2 * math.pi * k / n) for k in range(n + 1)]
-    px, base = PX + 160, py + ph - 70
+    px, base = PX + 140, py + ph - 70
     rot = ";".join(f"{-a:.2f} {px} {base}" for a in angles)
+    skin = "#c9a98f"
     fore = (
-        f'<rect x="{px}" y="{base - 11}" width="104" height="22" rx="6" fill="{BLUE}" fill-opacity=".28" stroke="{BLUE}" stroke-width="2"/>'
-        f'<path d="M{px + 30} {base}H{px + 66}" stroke="{BLUE}" stroke-width="3" stroke-linecap="round"/>'
-        f'<rect x="{px + 74}" y="{base - 17}" width="18" height="34" rx="4" fill="{PANEL}" stroke="{TEXT}" stroke-width="2"/>'
+        # forearm and hand
+        f'<path d="M{px} {base - 15}L{px + 92} {base - 9}V{base + 9}L{px} {base + 15}Z" fill="{skin}"/>'
+        f'<rect x="{px + 90}" y="{base - 11}" width="30" height="22" rx="9" fill="{skin}"/>'
+        f'<path d="M{px + 98} {base - 10}L{px + 112} {base - 19}" stroke="{skin}" stroke-width="7" stroke-linecap="round"/>'
+        # exoskeleton link and cuff on the outside of the arm
+        f'<rect x="{px}" y="{base - 6}" width="80" height="12" rx="4" fill="{BLUE}" fill-opacity=".45" stroke="{BLUE}" stroke-width="2"/>'
+        f'<rect x="{px + 58}" y="{base - 19}" width="15" height="38" rx="4" fill="{PANEL}" stroke="{TEXT}" stroke-width="2"/>'
         f'<animateTransform attributeName="transform" type="rotate" dur="{dur}s" repeatCount="indefinite" values="{rot}"/>'
     )
     x0, x1, top, bot = PX + 305, PX + 448, py + 24, py + ph - 58
@@ -720,10 +725,11 @@ def mans_panel(py, ph):
         ("04 DRV8701  drive the motor", 0.75, 1.0),
     ]
     return f"""<g clip-path="url(#tray)">
-<rect x="{PX + 24}" y="{base - 11}" width="{px - PX - 24}" height="22" rx="6" fill="#263041" stroke="{GREY}" stroke-width="2"/>
-<rect x="{PX + 48}" y="{base - 17}" width="18" height="34" rx="4" fill="{PANEL}" stroke="{TEXT}" stroke-width="2"/>
+<path d="M{PX - 20} {base - 18}L{px} {base - 16}V{base + 16}L{PX - 20} {base + 18}Z" fill="{skin}"/>
+<rect x="{PX + 26}" y="{base - 6}" width="{px - PX - 26}" height="12" rx="4" fill="{BLUE}" fill-opacity=".45" stroke="{BLUE}" stroke-width="2"/>
+<rect x="{PX + 48}" y="{base - 23}" width="15" height="46" rx="4" fill="{PANEL}" stroke="{TEXT}" stroke-width="2"/>
 <g>{fore}</g>
-<circle cx="{px}" cy="{base}" r="23" fill="{PANEL}" stroke="{BLUE}" stroke-width="3"/>
+<circle cx="{px}" cy="{base}" r="21" fill="{PANEL}" stroke="{BLUE}" stroke-width="3"/>
 <circle cx="{px}" cy="{base}" r="6" fill="{BLUE}"/>
 <rect x="{x0}" y="{top}" width="{x1 - x0}" height="{bot - top}" fill="{BG}" stroke="{LINE}"/>
 <path d="{d}" fill="none" stroke="{MUTED}" stroke-width="2" stroke-dasharray="5 5"/>
