@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="1160.87 46 39.13 48" width="39.13" height="48" role="img" aria-label="Us overview: scattered U letters are matched into groups, share emotions, get support from the UsBot AI companion, then get pulled together by a magnet-shaped U to form the Us logo.">
 <style>.sans{font-family:'Segoe UI',system-ui,-apple-system,'PingFang SC','Microsoft YaHei','Noto Sans CJK SC',sans-serif}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}</style>
 <rect x=".5" y=".5" width="1199" height="425" rx="14" fill="#0b0f17" stroke="#263041"/>
-<rect x="58" y="44" width="52" height="5" rx="2.5" fill="#ff7eb6"/>
-<text x="58" y="98" class="sans" font-size="44" font-weight="700" fill="#eef2f8">Us</text>
-<text x="58" y="132" class="sans" font-size="21" fill="#ff7eb6">An emotional social platform</text>
+<rect x="58" y="30" width="52" height="5" rx="2.5" fill="#ff7eb6"/>
+<text x="58" y="86" class="sans" font-size="44" font-weight="700" fill="#eef2f8">Us</text>
+<text x="58" y="124" class="sans" font-size="21" fill="#ff7eb6">An emotional social platform</text>
 <rect x="974" y="48.0" width="186" height="44" rx="22.0" fill="#ff7eb6"/><text x="996" y="76.7" class="sans" font-size="19" font-weight="600" fill="#0b0f17">Try Us online</text><path d="M1126 76.0L1138 64.0M1128 64.0H1138V74.0" fill="none" stroke="#0b0f17" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 <text x="58" y="242" class="sans" font-size="21" fill="#9aa7ba">FindUs matches you with groups, SeeU lets you share how</text><text x="58" y="273" class="sans" font-size="21" fill="#9aa7ba">you feel, and HelpU offers a local AI companion.</text><text x="58" y="304" class="sans" font-size="21" fill="#9aa7ba">Built solo and backed by an academic paper.</text>
 <rect x="58" y="342" width="128" height="36" rx="18" fill="#182130" stroke="#263041"/><text x="122.0" y="366" text-anchor="middle" class="mono" font-size="16" fill="#eef2f8">JavaScript</text><rect x="196" y="342" width="98" height="36" rx="18" fill="#182130" stroke="#263041"/><text x="245.0" y="366" text-anchor="middle" class="mono" font-size="16" fill="#eef2f8">Node.js</text><rect x="304" y="342" width="88" height="36" rx="18" fill="#182130" stroke="#263041"/><text x="348.0" y="366" text-anchor="middle" class="mono" font-size="16" fill="#eef2f8">Ollama</text><rect x="402" y="342" width="108" height="36" rx="18" fill="#182130" stroke="#263041"/><text x="456.0" y="366" text-anchor="middle" class="mono" font-size="16" fill="#eef2f8">Research</text>

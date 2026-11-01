@@ -110,7 +110,8 @@ RAIL_GAP = 16  # rail runs past the card so the space between cards has no link
 # img[align=left|right]. The animated panel stays whole, below the button row, because
 # each image runs its own SMIL clock and an animation cut across images would drift apart.
 # A row shorter than the 24px text line would leave a gap, which sets the row heights
-# and the breakpoint in README.md.
+# and the breakpoint in README.md. Nothing may be drawn across a seam: each slice scales
+# and snaps to device pixels on its own, so the two halves of a glyph would not line up.
 CTA_SHARES = (74.5, 14.5, 3)  # left of button, button, right of button
 MOBILE_CTA_SHARES = (54, 34, 4)
 DESKTOP_ROWS = (46, 94)  # y range of the button row; button is 44 tall
@@ -179,10 +180,11 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
             (PX, PY, 1, 1), (PX + PW, PY, -1, 1), (PX, PY + PH, 1, -1), (PX + PW, PY + PH, -1, -1),
         ]
     )
+    bar_y, title_y, subtitle_y = (30, 86, 124) if cta else (44, 98, 132)
     static = f"""<rect x=".5" y=".5" width="{W - 1}" height="{card_h - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
-<rect x="58" y="44" width="52" height="5" rx="2.5" fill="{accent}"/>
-<text x="58" y="98" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
-<text x="58" y="132" class="sans" font-size="21" fill="{accent}">{subtitle}</text>
+<rect x="58" y="{bar_y}" width="52" height="5" rx="2.5" fill="{accent}"/>
+<text x="58" y="{title_y}" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
+<text x="58" y="{subtitle_y}" class="sans" font-size="21" fill="{accent}">{subtitle}</text>
 {cta_button(PX + PW, sum(DESKTOP_ROWS) / 2, 186, 44, 19, cta) if cta else ""}
 {desc}
 {''.join(chip_svg)}"""
@@ -205,7 +207,8 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
 
 def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, label, period, plays_first=False, cta=None):
     mw, scale = 600, 540 / PW
-    panel_top, panel_h = 150, PH * scale
+    title_y, subtitle_y, panel_top = (102, 140, 160) if cta else (88, 126, 150)
+    panel_h = PH * scale
     desc_top = panel_top + panel_h + 50
     chip_y = desc_top + 36 * (len(lines) - 1) + 28
     mh = round(chip_y + 42 + 30)
@@ -224,8 +227,8 @@ def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, 
     static = f"""<rect x=".5" y=".5" width="{mw - 1}" height="{mh - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
 <rect x="30" y="30" width="52" height="5" rx="2.5" fill="{accent}"/>
 <text x="94" y="40" class="mono" font-size="21" fill="{MUTED}">{period}</text>
-<text x="30" y="88" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
-<text x="30" y="126" class="sans" font-size="25" fill="{accent}">{subtitle}</text>
+<text x="30" y="{title_y}" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
+<text x="30" y="{subtitle_y}" class="sans" font-size="25" fill="{accent}">{subtitle}</text>
 {cta_button(570, sum(MOBILE_ROWS) / 2, 214, 50, 23, cta) if cta else ""}"""
     full = f"""<defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
 {static}
