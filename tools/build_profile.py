@@ -171,7 +171,7 @@ def write_cta_card(stem, tag, width, height, rows, shares, static, full, label, 
     write_crop(f"{stem}-bottom{tag}.svg", 0, bottom, width, height - bottom, full, label)
 
 
-def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobile_lines, period, phase, cta=None, mobile_panel=None, rail=None):
+def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobile_lines, period, phase, cta=None, mobile_panel=None, rail=None, show_year=True):
     rail = rail or period
     card_h = H
     py, ph = (CTA_PY, CTA_PH) if cta else (PY, PH)
@@ -212,10 +212,10 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
 {brackets}"""
     if cta:
         write_cta_card(fname[:-4], "", W, card_h, DESKTOP_ROWS, CTA_SHARES, static, full, label, cta)
-        write_rail(f"timeline-{rail}.svg", W, card_h, 82, sum(DESKTOP_ROWS) // 2, accent, period, phase, DESKTOP_ROWS)
+        write_rail(f"timeline-{rail}.svg", W, card_h, 82, sum(DESKTOP_ROWS) // 2, accent, period if show_year else None, phase, DESKTOP_ROWS)
     else:
         write_crop(fname, 0, 0, W, card_h, full, label)
-        write_rail(f"timeline-{rail}.svg", W, card_h, 82, 84, accent, period, phase)
+        write_rail(f"timeline-{rail}.svg", W, card_h, 82, 84, accent, period if show_year else None, phase)
     mobile_block(fname.replace(".svg", "-mobile.svg"), title, subtitle, mobile_lines, chips, mobile_panel or panel, corner_brackets(PY, PH), accent, label, period, phase, cta, rail)
 
 
@@ -611,6 +611,7 @@ def us_block():
         ],
         period="2025",
         phase=(0, 4),
+        show_year=False,
         cta="Try Us online",
         mobile_panel=us_panel(PY, PH),
     )
@@ -686,6 +687,7 @@ def balance_block():
         cta="Watch demo",
         mobile_panel=balance_panel(PY, PH),
         rail="balance-2026",
+        show_year=False,
     )
 
 
