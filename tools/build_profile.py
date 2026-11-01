@@ -59,32 +59,39 @@ def status_steps(steps, dur, color, py=PY, ph=PH):
     return "".join(out)
 
 
-def cta_button(right, cy, w, h, size, label):
+def cta_button(right, cy, w, h, size, label, color):
     x = right - w
     ay = cy
     ax = right - 34
     return (
-        f'<rect x="{x}" y="{cy - h / 2}" width="{w}" height="{h}" rx="{h / 2}" fill="{PINK}"/>'
+        f'<rect x="{x}" y="{cy - h / 2}" width="{w}" height="{h}" rx="{h / 2}" fill="{color}"/>'
         f'<text x="{x + 22}" y="{cy + size * 0.35:.1f}" class="sans" font-size="{size}" font-weight="600" fill="{BG}">{label}</text>'
         f'<path d="M{ax} {ay + 6}L{ax + 12} {ay - 6}M{ax + 2} {ay - 6}H{ax + 12}V{ay + 4}" fill="none" stroke="{BG}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
     )
 
 
-def timeline(x, height, node_y, accent, year, plays_first):
-    """Dashed rail with a node. A light travels up the lower block, then the upper one."""
-    dur = 6
-    a, b = (0, 0.5) if plays_first else (0.5, 1)
+def timeline(x, height, node_y, accent, year, phase):
+    """Dashed rail with a node. A light travels up the blocks in turn, oldest first.
+
+    phase is (index, count), counted from the oldest block at the bottom.
+    """
+    i, count = phase
+    dur = 3 * count
+    a, b = i / count, (i + 1) / count
     label = (
         f'<text x="{x - 22}" y="{node_y + 9}" text-anchor="end" class="mono" font-size="24" font-weight="600" fill="#6f7c8f">{year}</text>'
         if year
         else ""
     )
-    if plays_first:
-        op_vals, op_times = [1, 1, 0, 0], [0, 0.5, 0.501, 1]
-        cy_vals, cy_times = [height, 0, 0], [0, 0.5, 1]
+    if a == 0:
+        op_vals, op_times = [1, 1, 0, 0], [0, b, b + 0.001, 1]
+        cy_vals, cy_times = [height, 0, 0], [0, b, 1]
+    elif b == 1:
+        op_vals, op_times = [0, 0, 1, 1], [0, a, a + 0.001, 1]
+        cy_vals, cy_times = [height, height, 0], [0, a, 1]
     else:
-        op_vals, op_times = [0, 0, 1, 1], [0, 0.5, 0.501, 1]
-        cy_vals, cy_times = [height, height, 0], [0, 0.5, 1]
+        op_vals, op_times = [0, 0, 1, 1, 0, 0], [0, a, a + 0.001, b, b + 0.001, 1]
+        cy_vals, cy_times = [height, height, 0, 0], [0, a, b, 1]
     return (
         f'<path d="M{x} 0V{height}" stroke="#6f7c8f" stroke-width="2.5" stroke-dasharray="7 7"/>'
         f'<circle cx="{x}" r="5" fill="#8a97aa" cy="{height}">'
@@ -119,11 +126,11 @@ MOBILE_ROWS = (56, 116)  # y range of the button row; button is 50 tall
 CTA_PY, CTA_PH = 100, 226  # desktop panel below the button row; same card height and panel bottom
 
 
-def write_rail(fname, card_w, height, x, node_y, accent, year, plays_first, rows=None):
+def write_rail(fname, card_w, height, x, node_y, accent, year, phase, rows=None):
     gw = round(card_w * GUTTER_SHARE / CARD_SHARE, 2)
     h = height + RAIL_GAP
     if rows:
-        body = timeline(x, h, node_y, accent, year, plays_first)
+        body = timeline(x, h, node_y, accent, year, phase)
         stem, top, bottom = fname[:-4], rows[0], rows[1]
         tag = "-mobile" if stem.endswith("-mobile") else ""
         stem = stem.removesuffix("-mobile")
@@ -132,7 +139,7 @@ def write_rail(fname, card_w, height, x, node_y, accent, year, plays_first, rows
         return
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {gw} {h}" width="{gw}" height="{h}" role="img" aria-label="{year or 'timeline'}">
 {STYLE}
-{timeline(x, h, node_y, accent, year, plays_first)}
+{timeline(x, h, node_y, accent, year, phase)}
 </svg>"""
     (OUT / "assets" / fname).write_text(svg, encoding="utf-8")
 
@@ -164,7 +171,8 @@ def write_cta_card(stem, tag, width, height, rows, shares, static, full, label, 
     write_crop(f"{stem}-bottom{tag}.svg", 0, bottom, width, height - bottom, full, label)
 
 
-def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobile_lines, period, plays_first=False, cta=None, mobile_panel=None):
+def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobile_lines, period, phase, cta=None, mobile_panel=None, rail=None):
+    rail = rail or period
     card_h = H
     py, ph = (CTA_PY, CTA_PH) if cta else (PY, PH)
     chip_svg, x = [], 58
@@ -193,7 +201,7 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
 <rect x="58" y="{bar_y}" width="52" height="5" rx="2.5" fill="{accent}"/>
 <text x="58" y="{title_y}" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
 <text x="58" y="{subtitle_y}" class="sans" font-size="21" fill="{accent}">{subtitle}</text>
-{cta_button(PX + PW, sum(DESKTOP_ROWS) / 2, 186, 44, 19, cta) if cta else ""}
+{cta_button(PX + PW, sum(DESKTOP_ROWS) / 2, 186, 44, 19, cta, accent) if cta else ""}
 {desc}
 {''.join(chip_svg)}"""
     full = f"""{static}
@@ -204,14 +212,15 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
 {brackets}"""
     if cta:
         write_cta_card(fname[:-4], "", W, card_h, DESKTOP_ROWS, CTA_SHARES, static, full, label, cta)
-        write_rail(f"timeline-{period}.svg", W, card_h, 82, sum(DESKTOP_ROWS) // 2, accent, period, plays_first, DESKTOP_ROWS)
+        write_rail(f"timeline-{rail}.svg", W, card_h, 82, sum(DESKTOP_ROWS) // 2, accent, period, phase, DESKTOP_ROWS)
     else:
         write_crop(fname, 0, 0, W, card_h, full, label)
-        write_rail(f"timeline-{period}.svg", W, card_h, 82, 84, accent, period, plays_first)
-    mobile_block(fname.replace(".svg", "-mobile.svg"), title, subtitle, mobile_lines, chips, mobile_panel or panel, corner_brackets(PY, PH), accent, label, period, plays_first, cta)
+        write_rail(f"timeline-{rail}.svg", W, card_h, 82, 84, accent, period, phase)
+    mobile_block(fname.replace(".svg", "-mobile.svg"), title, subtitle, mobile_lines, chips, mobile_panel or panel, corner_brackets(PY, PH), accent, label, period, phase, cta, rail)
 
 
-def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, label, period, plays_first=False, cta=None):
+def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, label, period, phase, cta=None, rail=None):
+    rail = rail or period
     mw, scale = 600, 540 / PW
     title_y, subtitle_y, panel_top = (102, 140, 160) if cta else (88, 126, 150)
     panel_h = PH * scale
@@ -235,7 +244,7 @@ def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, 
 <text x="94" y="40" class="mono" font-size="21" fill="{MUTED}">{period}</text>
 <text x="30" y="{title_y}" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
 <text x="30" y="{subtitle_y}" class="sans" font-size="25" fill="{accent}">{subtitle}</text>
-{cta_button(570, sum(MOBILE_ROWS) / 2, 214, 50, 23, cta) if cta else ""}"""
+{cta_button(570, sum(MOBILE_ROWS) / 2, 214, 50, 23, cta, accent) if cta else ""}"""
     full = f"""<defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
 {static}
 <g transform="translate(30 {panel_top}) scale({scale:.4f}) translate({-PX} {-PY})">
@@ -248,10 +257,10 @@ def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, 
 {''.join(chip_svg)}"""
     if cta:
         write_cta_card(fname[: -len("-mobile.svg")], "-mobile", mw, mh, MOBILE_ROWS, MOBILE_CTA_SHARES, static, full, label, cta)
-        write_rail(f"timeline-{period}-mobile.svg", mw, mh, 24, sum(MOBILE_ROWS) // 2, accent, None, plays_first, MOBILE_ROWS)
+        write_rail(f"timeline-{rail}-mobile.svg", mw, mh, 24, sum(MOBILE_ROWS) // 2, accent, None, phase, MOBILE_ROWS)
     else:
         write_crop(fname, 0, 0, mw, mh, full, label)
-        write_rail(f"timeline-{period}-mobile.svg", mw, mh, 24, 72, accent, None, plays_first)
+        write_rail(f"timeline-{rail}-mobile.svg", mw, mh, 24, 72, accent, None, phase)
 
 
 def header_mobile():
@@ -404,6 +413,7 @@ def vision_block():
             "S7 PLC drives the machine to pick them up.",
         ],
         period="2026",
+        phase=(2, 3),
     )
 
 
@@ -592,9 +602,78 @@ def us_block():
             "by an academic paper.",
         ],
         period="2025",
-        plays_first=True,
+        phase=(1, 3),
         cta="Try Us online",
         mobile_panel=us_panel(PY, PH),
+    )
+
+
+# ---------- MANS ----------
+def mans_panel(py, ph):
+    """Elbow following the firmware trajectory: 45 - 44 cos(2 pi 0.1 t) degrees, 10 s period."""
+    dur, n = 10, 40
+    angles = [45 - 44 * math.cos(2 * math.pi * k / n) for k in range(n + 1)]
+    px, base = PX + 160, py + ph - 70
+    rot = ";".join(f"{-a:.2f} {px} {base}" for a in angles)
+    fore = (
+        f'<rect x="{px}" y="{base - 11}" width="104" height="22" rx="6" fill="{BLUE}" fill-opacity=".28" stroke="{BLUE}" stroke-width="2"/>'
+        f'<path d="M{px + 30} {base}H{px + 66}" stroke="{BLUE}" stroke-width="3" stroke-linecap="round"/>'
+        f'<rect x="{px + 74}" y="{base - 17}" width="18" height="34" rx="4" fill="{PANEL}" stroke="{TEXT}" stroke-width="2"/>'
+        f'<animateTransform attributeName="transform" type="rotate" dur="{dur}s" repeatCount="indefinite" values="{rot}"/>'
+    )
+    x0, x1, top, bot = PX + 305, PX + 448, py + 24, py + ph - 58
+    pts = [(x0 + (x1 - x0) * k / n, bot - (bot - top) * a / 90) for k, a in enumerate(angles)]
+    d = "M" + " L".join(f"{x:.1f} {y:.1f}" for x, y in pts)
+    motion = ";".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    steps = [
+        ("01 READ  AS5047P joint angle", 0.0, 0.25),
+        ("02 POSITION PID  target speed", 0.25, 0.5),
+        ("03 SPEED PID  PWM duty", 0.5, 0.75),
+        ("04 DRV8701  drive the motor", 0.75, 1.0),
+    ]
+    return f"""<g clip-path="url(#tray)">
+<rect x="{PX + 24}" y="{base - 11}" width="{px - PX - 24}" height="22" rx="6" fill="#263041" stroke="{GREY}" stroke-width="2"/>
+<rect x="{PX + 48}" y="{base - 17}" width="18" height="34" rx="4" fill="{PANEL}" stroke="{TEXT}" stroke-width="2"/>
+<g>{fore}</g>
+<circle cx="{px}" cy="{base}" r="23" fill="{PANEL}" stroke="{BLUE}" stroke-width="3"/>
+<circle cx="{px}" cy="{base}" r="6" fill="{BLUE}"/>
+<rect x="{x0}" y="{top}" width="{x1 - x0}" height="{bot - top}" fill="{BG}" stroke="{LINE}"/>
+<path d="{d}" fill="none" stroke="{MUTED}" stroke-width="2" stroke-dasharray="5 5"/>
+<text x="{x0}" y="{top - 8}" class="mono" font-size="13" fill="{MUTED}">target angle</text>
+<text x="{x0 - 6}" y="{top + 11}" text-anchor="end" class="mono" font-size="13" fill="{MUTED}">90°</text>
+<text x="{x0 - 6}" y="{bot}" text-anchor="end" class="mono" font-size="13" fill="{MUTED}">0°</text>
+<text x="{x1}" y="{bot + 17}" text-anchor="end" class="mono" font-size="13" fill="{MUTED}">10 s</text>
+<circle r="6" fill="{BLUE}" stroke="{BG}" stroke-width="2"><animateMotion dur="{dur}s" repeatCount="indefinite" calcMode="linear" values="{motion}"/></circle>
+</g>
+<rect x="{PX}" y="{py + ph - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
+{status_steps(steps, dur, BLUE, py, ph)}"""
+
+
+def mans_block():
+    block(
+        "card-mans.svg",
+        "MANS",
+        "Adjustable powered elbow-worn exoskeleton",
+        [
+            "A wearable elbow joint: my own 24 V motor driver board,",
+            "3D-printed adjustable links, and a 100 Hz position and",
+            "speed PID loop that follows a smooth motion curve.",
+        ],
+        ["STM32F103", "DRV8701", "AS5047P", "Cascaded PID"],
+        mans_panel(CTA_PY, CTA_PH),
+        BLUE,
+        "MANS overview: an elbow exoskeleton joint flexes along a smooth target curve while the firmware reads the encoder, runs position and speed PID loops, and drives the motor.",
+        [
+            "A wearable elbow joint: my own 24 V motor",
+            "driver board, 3D-printed adjustable links,",
+            "and a 100 Hz position and speed PID loop",
+            "that follows a smooth motion curve.",
+        ],
+        period="2025",
+        phase=(0, 3),
+        cta="Watch video",
+        mobile_panel=mans_panel(PY, PH),
+        rail="mans-2025",
     )
 
 
@@ -602,3 +681,4 @@ header()
 header_mobile()
 vision_block()
 us_block()
+mans_block()
