@@ -104,10 +104,31 @@ def timeline(x, height, node_y, accent, year, plays_first):
 GUTTER_SHARE, CARD_SHARE = 8, 92  # percent of README width; must match README.md
 RAIL_GAP = 16  # rail runs past the card so the space between cards has no link
 
+# GitHub strips image maps, so a card with a button is cut into three rows of separately
+# linked images: top, then left / button / right, then the rest. Slice widths are percents
+# of README width and must match README.md. Floats are not an option because GitHub pads
+# img[align=left|right]. The animated panel stays whole, below the button row, because
+# each image runs its own SMIL clock and an animation cut across images would drift apart.
+# A row shorter than the 24px text line would leave a gap, which sets the row heights
+# and the breakpoint in README.md.
+CTA_SHARES = (74.5, 14.5, 3)  # left of button, button, right of button
+MOBILE_CTA_SHARES = (54, 34, 4)
+DESKTOP_ROWS = (46, 94)  # y range of the button row; button is 44 tall
+MOBILE_ROWS = (56, 116)  # y range of the button row; button is 50 tall
+CTA_DROP = 66  # how far the button row pushes the panel and text down on a desktop card
 
-def write_rail(fname, card_w, height, x, node_y, accent, year, plays_first):
+
+def write_rail(fname, card_w, height, x, node_y, accent, year, plays_first, rows=None):
     gw = round(card_w * GUTTER_SHARE / CARD_SHARE, 2)
     h = height + RAIL_GAP
+    if rows:
+        body = timeline(x, h, node_y, accent, year, plays_first)
+        stem, top, bottom = fname[:-4], rows[0], rows[1]
+        tag = "-mobile" if stem.endswith("-mobile") else ""
+        stem = stem.removesuffix("-mobile")
+        for part, y, part_h in [("top", 0, top), ("mid", top, bottom - top), ("bottom", bottom, h - bottom)]:
+            write_crop(f"{stem}-{part}{tag}.svg", 0, y, gw, part_h, body, year or "timeline")
+        return
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {gw} {h}" width="{gw}" height="{h}" role="img" aria-label="{year or 'timeline'}">
 {STYLE}
 {timeline(x, h, node_y, accent, year, plays_first)}
@@ -115,17 +136,41 @@ def write_rail(fname, card_w, height, x, node_y, accent, year, plays_first):
     (OUT / "assets" / fname).write_text(svg, encoding="utf-8")
 
 
+def write_crop(fname, x, y, w, h, body, label):
+    """One slice of a card: the same drawing seen through a smaller viewBox."""
+    x, y, w, h = round(x, 2), round(y, 2), round(w, 2), round(h, 2)
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x} {y} {w} {h}" width="{w}" height="{h}" role="img" aria-label="{label}">
+{STYLE}
+{body}
+</svg>"""
+    (OUT / "assets" / fname).write_text(svg, encoding="utf-8")
+
+
+def write_cta_card(stem, tag, width, height, rows, shares, static, full, label, cta):
+    top, bottom = rows
+    unit = width / CARD_SHARE
+    left, button = shares[0] * unit, shares[1] * unit
+    row_h = bottom - top
+    write_crop(f"{stem}-top{tag}.svg", 0, 0, width, top, static, label)
+    write_crop(f"{stem}-left{tag}.svg", 0, top, left, row_h, static, label)
+    write_crop(f"{stem}-button{tag}.svg", left, top, button, row_h, static, cta)
+    write_crop(f"{stem}-right{tag}.svg", left + button, top, width - left - button, row_h, static, label)
+    write_crop(f"{stem}-bottom{tag}.svg", 0, bottom, width, height - bottom, full, label)
+
+
 def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobile_lines, period, plays_first=False, cta=None):
+    drop = CTA_DROP if cta else 0
+    card_h = H + drop
     chip_svg, x = [], 58
     for c in chips:
         w = 10 * len(c) + 28
         chip_svg.append(
-            f'<rect x="{x}" y="276" width="{w}" height="36" rx="18" fill="#182130" stroke="{LINE}"/>'
-            f'<text x="{x + w / 2}" y="300" text-anchor="middle" class="mono" font-size="16" fill="{TEXT}">{c}</text>'
+            f'<rect x="{x}" y="{276 + drop}" width="{w}" height="36" rx="18" fill="#182130" stroke="{LINE}"/>'
+            f'<text x="{x + w / 2}" y="{300 + drop}" text-anchor="middle" class="mono" font-size="16" fill="{TEXT}">{c}</text>'
         )
         x += w + 10
     desc = "".join(
-        f'<text x="58" y="{176 + i * 31}" class="sans" font-size="21" fill="{MUTED}">{l}</text>'
+        f'<text x="58" y="{176 + drop + i * 31}" class="sans" font-size="21" fill="{MUTED}">{l}</text>'
         for i, l in enumerate(desc_lines)
     )
     brackets = "".join(
@@ -134,23 +179,27 @@ def block(fname, title, subtitle, desc_lines, chips, panel, accent, label, mobil
             (PX, PY, 1, 1), (PX + PW, PY, -1, 1), (PX, PY + PH, 1, -1), (PX + PW, PY + PH, -1, -1),
         ]
     )
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-label="{label}">
-{STYLE}
-<defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
-<rect x=".5" y=".5" width="{W - 1}" height="{H - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
+    static = f"""<rect x=".5" y=".5" width="{W - 1}" height="{card_h - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
 <rect x="58" y="44" width="52" height="5" rx="2.5" fill="{accent}"/>
 <text x="58" y="98" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
 <text x="58" y="132" class="sans" font-size="21" fill="{accent}">{subtitle}</text>
-{cta_button(650, 84, 186, 44, 19, cta) if cta else ""}
+{cta_button(PX + PW, sum(DESKTOP_ROWS) / 2, 186, 44, 19, cta) if cta else ""}
 {desc}
-{''.join(chip_svg)}
+{''.join(chip_svg)}"""
+    full = f"""{static}
+<g transform="translate(0 {drop})">
+<defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
 <rect x="{PX}" y="{PY}" width="{PW}" height="{PH}" fill="{PANEL}"/>
 {panel}
 <rect x="{PX}" y="{PY}" width="{PW}" height="{PH}" fill="none" stroke="{LINE}"/>
 {brackets}
-</svg>"""
-    (OUT / "assets" / fname).write_text(svg, encoding="utf-8")
-    write_rail(f"timeline-{period}.svg", W, H, 82, 84, accent, period, plays_first)
+</g>"""
+    if cta:
+        write_cta_card(fname[:-4], "", W, card_h, DESKTOP_ROWS, CTA_SHARES, static, full, label, cta)
+        write_rail(f"timeline-{period}.svg", W, card_h, 82, sum(DESKTOP_ROWS) // 2, accent, period, plays_first, DESKTOP_ROWS)
+    else:
+        write_crop(fname, 0, 0, W, card_h, full, label)
+        write_rail(f"timeline-{period}.svg", W, card_h, 82, 84, accent, period, plays_first)
     mobile_block(fname.replace(".svg", "-mobile.svg"), title, subtitle, mobile_lines, chips, panel, brackets, accent, label, period, plays_first, cta)
 
 
@@ -172,15 +221,14 @@ def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, 
         f'<text x="30" y="{desc_top + i * 36:.0f}" class="sans" font-size="25" fill="{MUTED}">{l}</text>'
         for i, l in enumerate(lines)
     )
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mw} {mh}" width="{mw}" height="{mh}" role="img" aria-label="{label}">
-{STYLE}
-<defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
-<rect x=".5" y=".5" width="{mw - 1}" height="{mh - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
+    static = f"""<rect x=".5" y=".5" width="{mw - 1}" height="{mh - 1}" rx="14" fill="{BG}" stroke="{LINE}"/>
 <rect x="30" y="30" width="52" height="5" rx="2.5" fill="{accent}"/>
 <text x="94" y="40" class="mono" font-size="21" fill="{MUTED}">{period}</text>
 <text x="30" y="88" class="sans" font-size="44" font-weight="700" fill="{TEXT}">{title}</text>
 <text x="30" y="126" class="sans" font-size="25" fill="{accent}">{subtitle}</text>
-{cta_button(570, 72, 214, 50, 23, cta) if cta else ""}
+{cta_button(570, sum(MOBILE_ROWS) / 2, 214, 50, 23, cta) if cta else ""}"""
+    full = f"""<defs><clipPath id="tray"><rect x="{PX}" y="{PY}" width="{PW}" height="{PH}"/></clipPath></defs>
+{static}
 <g transform="translate(30 {panel_top}) scale({scale:.4f}) translate({-PX} {-PY})">
 <rect x="{PX}" y="{PY}" width="{PW}" height="{PH}" fill="{PANEL}"/>
 {panel}
@@ -188,10 +236,13 @@ def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, 
 {brackets}
 </g>
 {desc}
-{''.join(chip_svg)}
-</svg>"""
-    (OUT / "assets" / fname).write_text(svg, encoding="utf-8")
-    write_rail(f"timeline-{period}-mobile.svg", mw, mh, 24, 72, accent, None, plays_first)
+{''.join(chip_svg)}"""
+    if cta:
+        write_cta_card(fname[: -len("-mobile.svg")], "-mobile", mw, mh, MOBILE_ROWS, MOBILE_CTA_SHARES, static, full, label, cta)
+        write_rail(f"timeline-{period}-mobile.svg", mw, mh, 24, sum(MOBILE_ROWS) // 2, accent, None, plays_first, MOBILE_ROWS)
+    else:
+        write_crop(fname, 0, 0, mw, mh, full, label)
+        write_rail(f"timeline-{period}-mobile.svg", mw, mh, 24, 72, accent, None, plays_first)
 
 
 def header_mobile():
