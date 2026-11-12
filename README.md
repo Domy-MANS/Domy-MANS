@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(max-width: 900px)" srcset="assets/header-blueprint-mobile.svg" />
-    <img src="assets/header-blueprint.svg" width="100%" alt="Domy Yu: machines that see, software that connects." />
+    <source media="(max-width: 900px)" srcset="assets/header-armor-mobile.svg" />
+    <img src="assets/header-armor.svg" width="100%" alt="Domy Yu: machines that see, software that connects." />
   </picture>
 </p>
 

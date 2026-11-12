@@ -279,71 +279,118 @@ def bp_grid(w, h):
     return f'<g stroke="{BP_MINOR}">{minor}</g><g stroke="{BP_MAJOR}">{major}</g>'
 
 
-def hologram(cx, base, s=1.0, callouts=True):
-    """An exploded view of the MANS elbow actuator, projected above a hologram table.
-
-    Each part is drawn flat, spun in its own plane, then squashed to an ellipse: an orthographic
-    3D view made of plain SVG transforms, so it costs a few hundred bytes instead of keyframed paths.
-    The stack comes apart, holds while the parts are labelled, and goes back together."""
-    dur, tilt = 12, 0.38
+def arm_hologram(ex, ey, s=1.0, labels=True):
+    """The header's story, 16 s: an arm in exploded view comes together, armor plates fly in
+    and lock on, then the Us heart lights up at the elbow (the MANS joint), the light runs out
+    along the armor, and the elbow flexes. Everything is in local coordinates around the elbow."""
+    dur = 16
     nss = 'vector-effect="non-scaling-stroke"'
+    sp = lambda n: ";".join([".4 0 .2 1"] * n)
 
-    def gear(n, ro, rr):
-        pts, step = [], 2 * math.pi / n
-        for i in range(n):
-            a = i * step
-            for f, r in [(0, rr), (0.18, ro), (0.5, ro), (0.68, rr)]:
-                pts.append((r * math.cos(a + f * step), r * math.sin(a + f * step)))
-        return "M" + " L".join(f"{x:.1f} {y:.1f}" for x, y in pts) + "Z"
+    def move(vals, times):  # translate keyframes, eased
+        return (f'<animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" '
+                f'calcMode="spline" keySplines="{sp(len(vals) - 1)}" keyTimes="{";".join(f"{t:g}" for t in times)}" values="{";".join(vals)}"/>')
 
-    ring = lambda r, extra="": f'<circle r="{r}" {nss}{extra}/>'
-    around = lambda n, rad, el: "".join(el(rad * math.cos(2 * math.pi * k / n), rad * math.sin(2 * math.pi * k / n), k) for k in range(n))
-    parts = [  # (drawing, spin seconds (negative: the other way), radius, label)
-        (ring(42) + ring(12) + around(6, 34, lambda x, y, k: f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3" {nss}/>'), 40, 42, "end cap · 6× M3"),
-        (f'<path d="{gear(16, 60, 53)}" {nss}/>' + ring(46) + ring(12) + around(5, 1, lambda x, y, k: f'<path d="M{12 * x:.1f} {12 * y:.1f}L{46 * x:.1f} {46 * y:.1f}" {nss}/>'), 16, 60, "gear stage · 16T"),
-        (ring(40) + ring(28) + around(10, 34, lambda x, y, k: f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" {nss}/>'), -10, 40, "bearing"),
-        (ring(54) + ring(22) + around(12, 1, lambda x, y, k: f'<path d="M{46 * x:.1f} {46 * y:.1f}L{54 * x:.1f} {54 * y:.1f}" {nss}/>'), 30, 54, "24 V motor + AS5047P"),
-    ]
-    # rest heights (assembled) and exploded heights, top part first, relative to the table
-    shut = [-82, -70, -58, -46]
-    open_ = [-150, -112, -76, -40]
-    times = "0;0.12;0.32;0.72;0.9;1"
-    spline = ";".join([".4 0 .2 1"] * 5)
-    out = []
-    for (draw, spin, r, label), y0, y1 in zip(parts, shut, open_):
-        move = f'<animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" calcMode="spline" keySplines="{spline}" keyTimes="{times}" values="0 {y0};0 {y0};0 {y1};0 {y1};0 {y0};0 {y0}"/>'
-        rot = f'<animateTransform attributeName="transform" type="rotate" dur="{abs(spin)}s" repeatCount="indefinite" values="{"0;360" if spin > 0 else "360;0"}"/>'
-        face = f'<g transform="scale(1 {tilt})"><g>{draw}{rot}</g></g>'
-        # two faces a few pixels apart give each part its thickness
-        body = f'<g transform="translate(0 6)" opacity=".35">{face}</g><g>{face}</g>'
-        note = ""
-        if callouts:
-            lx = -r - 46
-            note = (
-                f'<g opacity="0"><path d="M{-r * 0.92:.1f} 0L{-r - 16} -10H{lx}" fill="none" stroke="{HOLO}" stroke-opacity=".7" {nss}/>'
-                f'<text x="{lx - 6}" y="-6" text-anchor="end" class="mono" font-size="12" fill="{HOLO}" fill-opacity="1" stroke="none">{label}</text>'
-                + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.3, 0.36, 0.68, 0.72, 1]) + "</g>"
-            )
-        out.append(f"<g>{body}{note}{move}</g>")
-    cone = (
-        f'<path d="M-78 0L-96 -172H96L78 0Z" fill="url(#cone)" stroke="none"/>'
-        f'<path d="M0 6V-176" stroke="{HOLO}" stroke-opacity=".35" stroke-dasharray="3 5" {nss}/>'
+    def window(a, b, fade=0.02):  # visible from a to b
+        return anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, a, round(a + fade, 3), b, round(b + fade, 3), 1])
+
+    def lit(at):  # an armor plate catching the light: brighter fill and edge from `at` until the fade-out
+        return (anim("fill-opacity", dur, [0.04, 0.04, 0.3, 0.3, 0.04], [0, at, round(at + 0.03, 3), 0.92, 1])
+                + anim("stroke", dur, [HOLO, HOLO, "#d9f7ff", "#d9f7ff", HOLO], [0, at, round(at + 0.03, 3), 0.92, 1]))
+
+    def limb(x1, x2, r1, r2):  # a tapered cylinder in wireframe: two edges and cross-sections
+        out = f'<path d="M{x1} {-r1}L{x2} {-r2}M{x1} {r1}L{x2} {r2}" fill="none" {nss}/>'
+        for k in range(5):
+            x = x1 + (x2 - x1) * k / 4
+            r = r1 + (r2 - r1) * k / 4
+            out += f'<ellipse cx="{x:.1f}" cy="0" rx="{r * 0.32:.1f}" ry="{r:.1f}" fill="none" stroke-opacity="{1 if k in (0, 4) else 0.45}" {nss}/>'
+        return out
+
+    def plate(x1, x2, r1, r2, side, at_in, at_lit):  # side -1: top, 1: bottom
+        s_ = side
+        d = (f"M{x1 + 3} {s_ * r1 * 0.25:.1f}L{x1} {s_ * (r1 + 6)}L{x2 - 9} {s_ * (r2 + 6)}L{x2} {s_ * (r2 + 1)}L{x2} {s_ * r2 * 0.25:.1f}Z")
+        seam = f'<path d="M{x1 + 10} {s_ * (r1 + 1)}L{x2 - 16} {s_ * (r2 + 1)}" fill="none" stroke-opacity=".6" {nss}/>'
+        return (f'<g opacity="0"><g><path d="{d}" {nss}>{lit(at_lit)}</path>{seam}'
+                + move([f"0 {s_ * 70}", f"0 {s_ * 70}", "0 0", "0 0"], [0, at_in, at_in + 0.05, 1]) + "</g>"
+                + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, at_in, round(at_in + 0.03, 3), 0.92, 0.95, 1]) + "</g>")
+
+    def label(x, y, text):
+        if not labels:
+            return ""
+        return (f'<g opacity="0"><path d="M{x} {y + 6}V{y + 16}" fill="none" stroke-opacity=".7" {nss}/>'
+                f'<text x="{x}" y="{y}" text-anchor="middle" class="mono" font-size="12" fill="{HOLO}" fill-opacity="1" stroke="none">{text}</text>'
+                + window(0.05, 0.2) + "</g>")
+
+    # ---- the arm, exploded along its axis, then together (0 - .3) ----
+    apart = lambda dx: move([f"{dx} 0", f"{dx} 0", "0 0", "0 0"], [0, 0.22, 0.3, 1])
+    upper = (f'<g>{limb(-172, -26, 26, 20)}<circle cx="-188" cy="0" r="16" fill="none" {nss}/>'
+             + label(-100, -40, "upper arm") + apart(-36) + "</g>")
+    joint = ('<g><circle r="22" fill="none" ' + nss + '/><circle r="14" fill="none" stroke-opacity=".6" ' + nss + '/>'
+             + "".join(f'<circle cx="{18 * math.cos(k * math.pi / 3):.1f}" cy="{18 * math.sin(k * math.pi / 3):.1f}" r="1.6" {nss}/>' for k in range(6))
+             + label(0, -40, "elbow · MANS actuator") + "</g>")
+    hand = (f'<g><rect x="170" y="-17" width="50" height="34" rx="8" fill="none" {nss}/>'
+            + "".join(f'<path d="M220 {y}H236" fill="none" stroke-linecap="round" {nss}/>' for y in (-12, -4, 4, 12))
+            + f'<path d="M186 -17L202 -27L212 -25" fill="none" {nss}/>'
+            + label(205, -40, "hand") + apart(30) + "</g>")
+    fore_parts = f'<g>{limb(26, 166, 19, 14)}' + label(96, -36, "forearm") + apart(34) + "</g>" + hand
+
+    # ---- armor plates fly in (.32 - .56) and light up from the heart outward (.6 - .7) ----
+    upper_armor = (plate(-168, -34, 26, 20, -1, 0.34, 0.63) + plate(-168, -34, 26, 20, 1, 0.37, 0.63)
+                   + f'<g opacity="0"><g><path d="M-158 -34Q-208 -30 -208 0Q-208 30 -158 34L-160 26Q-198 22 -198 0Q-198 -22 -160 -26Z" {nss}>{lit(0.67)}</path>'
+                   + move(["-60 0", "-60 0", "0 0", "0 0"], [0, 0.32, 0.37, 1]) + "</g>"
+                   + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.32, 0.35, 0.92, 0.95, 1]) + "</g>")
+    fore_armor = (plate(30, 162, 19, 14, -1, 0.42, 0.64) + plate(30, 162, 19, 14, 1, 0.45, 0.64)
+                  + f'<g opacity="0"><g><path d="M172 -6L172 -22L212 -22L224 -12L224 -6Z" {nss}>{lit(0.67)}</path>'
+                  + "".join(f'<path d="M{x} -22Q{x + 5} -28 {x + 10} -22" fill="none" {nss}/>' for x in (180, 192, 204))
+                  + move(["60 0", "60 0", "0 0", "0 0"], [0, 0.48, 0.53, 1]) + "</g>"
+                  + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.48, 0.51, 0.92, 0.95, 1]) + "</g>")
+    cop = (f'<g opacity="0"><g><circle r="30" {nss}>{lit(0.6)}</circle><circle r="25" fill="none" stroke-opacity=".6" {nss}/>'
+           + "".join(f'<circle cx="{27.5 * math.cos(k * math.pi / 4):.1f}" cy="{27.5 * math.sin(k * math.pi / 4):.1f}" r="1.4" {nss}/>' for k in range(8))
+           + f'<animateTransform attributeName="transform" type="scale" dur="{dur}s" repeatCount="indefinite" values="1.8;1.8;1;1" keyTimes="0;0.4;0.45;1"/></g>'
+           + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.4, 0.43, 0.92, 0.95, 1]) + "</g>")
+
+    # energy runs out from the elbow along the arm
+    def run(d, at):
+        return (f'<path d="{d}" fill="none" stroke="#e6faff" stroke-width="2.4" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" {nss}>'
+                + anim("stroke-dashoffset", dur, [1, 1, 0, 0, 1], [0, at, round(at + 0.07, 3), 0.92, 1])
+                + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, at, round(at + 0.01, 3), 0.9, 0.93, 1]) + "</path>")
+
+    # ---- the Us heart (the Us logo's magnet, red and blue) at the elbow (.56 - .6) ----
+    cell = 1.55
+    heart = (f'<g opacity="0" fill-opacity="1" stroke="none" filter="url(#glow)"><g shape-rendering="crispEdges">{logo_pixels(-10 * cell, -11 * cell, cell, "RBKhg")}'
+             f'<animateTransform attributeName="transform" type="scale" dur="{dur}s" repeatCount="indefinite" values="0;0;1.25;1;1" keyTimes="0;0.56;0.59;0.61;1"/></g>'
+             + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.56, 0.57, 0.92, 0.95, 1]) + "</g>")
+    halo = (f'<circle r="26" fill="#e6faff" fill-opacity=".55" stroke="none" opacity="0" filter="url(#namefx)">'
+            + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.57, 0.6, 0.92, 0.95, 1]) + "</circle>")
+    rings = "".join(
+        f'<circle r="18" fill="none" stroke="#e6faff" stroke-width="2" opacity="0" {nss}>'
+        + anim("r", dur, [18, 18, 90, 90], [0, a, round(a + 0.06, 3), 1])
+        + anim("opacity", dur, [0, 0, 0.9, 0, 0], [0, a, round(a + 0.005, 3), round(a + 0.06, 3), 1]) + "</circle>"
+        for a in (0.6, 0.66, 0.72)
     )
-    table = (
-        f'<g transform="scale(1 {tilt})"><g fill="none">'
-        f'<circle r="86" stroke-opacity=".5" stroke-dasharray="2 6" {nss}/><circle r="76" stroke-opacity=".8" {nss}/>'
-        + around(24, 1, lambda x, y, k: f'<path d="M{80 * x:.1f} {80 * y:.1f}L{(86 if k % 2 else 90) * x:.1f} {(86 if k % 2 else 90) * y:.1f}" {nss}/>')
-        + f'<animateTransform attributeName="transform" type="rotate" dur="60s" repeatCount="indefinite" values="0;360"/></g></g>'
-    )
-    return (
-        f'<g transform="translate({cx} {base}) scale({s})" fill="{HOLO}" fill-opacity=".05" stroke="{HOLO}" stroke-width="1.3" filter="url(#glow)">'
-        f"{cone}{table}{''.join(reversed(out))}</g>"
+
+    # the forearm side bends at the elbow: flexes once the arm is lit (.74 - .88)
+    flex = (f'<animateTransform attributeName="transform" type="rotate" dur="{dur}s" repeatCount="indefinite" calcMode="spline" '
+            f'keySplines="{sp(4)}" keyTimes="0;0.74;0.81;0.88;1" values="0;0;-22;0;0"/>')
+    fore = f'<g>{fore_parts}{fore_armor}{run("M18 0H222", 0.61)}{flex}</g>'
+    body = upper + upper_armor + run("M-18 0H-186", 0.61) + joint + cop + fore + rings + halo + heart
+    return (f'<g transform="translate({ex} {ey}) scale({s})" fill="{HOLO}" fill-opacity=".04" stroke="{HOLO}" stroke-width="1.3" filter="url(#glow)">'
+            + f'<g>{body}' + anim("opacity", dur, [0, 1, 1, 0, 0], [0, 0.03, 0.93, 0.97, 1]) + "</g></g>")
+
+
+def arm_status(x, y):
+    """The story so far, bottom right: one line per act."""
+    dur = 16
+    acts = [("01 ARM · exploded view", 0.0, 0.3), ("02 ARMOR · plating", 0.3, 0.55), ("03 US HEART · online", 0.55, 0.95)]
+    return "".join(
+        f'<text x="{x}" y="{y}" text-anchor="end" class="mono" font-size="13" fill="{HOLO}" opacity="0">{t}'
+        + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, a, round(a + 0.01, 3), b, round(b + 0.01, 3), 1]) + "</text>"
+        for t, a, b in acts
     )
 
 
 def bp_defs(w, h):
     return f"""<defs>
-<linearGradient id="cone" x1="0" x2="0" y1="1" y2="0"><stop offset="0" stop-color="{HOLO}" stop-opacity=".16"/><stop offset="1" stop-color="{HOLO}" stop-opacity="0"/></linearGradient>
 <linearGradient id="scan" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="{HOLO}" stop-opacity="0"/><stop offset="1" stop-color="{HOLO}" stop-opacity=".14"/></linearGradient>
 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 <filter id="namefx" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
@@ -374,22 +421,22 @@ def name_block(x, y, size):
 
 
 def header_mobile():
-    mw, h, dur = 600, 300, 9
+    mw, h, dur = 600, 400, 9
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mw} {h}" width="{mw}" height="{h}" role="img" aria-label="Domy Yu: machines that see, software that connects.">
 {STYLE}
 {bp_defs(mw, h)}
 <g clip-path="url(#c)">
 <rect width="{mw}" height="{h}" fill="{BP_BG}"/>
 {bp_grid(mw, h)}
-{hologram(486, 204, 0.72, callouts=False)}
+{arm_hologram(272, 122, 0.95)}
 {bp_frame(mw, h, dur)}
 </g>
-{name_block(28, 108, 84)}
-<text x="30" y="166" class="sans" font-size="31" fill="{TEXT}">Machines that see.</text>
-<text x="30" y="206" class="sans" font-size="31" fill="{TEXT}">Software that connects.</text>
-<text x="30" y="258" class="mono" font-size="20" fill="{HOLO}">vision / automation / embedded / full-stack</text>
+{name_block(28, 236, 84)}
+<text x="30" y="290" class="sans" font-size="31" fill="{TEXT}">Machines that see.</text>
+<text x="30" y="330" class="sans" font-size="31" fill="{TEXT}">Software that connects.</text>
+<text x="30" y="374" class="mono" font-size="20" fill="{HOLO}">vision / automation / embedded / full-stack</text>
 </svg>"""
-    (OUT / "assets/header-blueprint-mobile.svg").write_text(svg, encoding="utf-8")
+    (OUT / "assets/header-armor-mobile.svg").write_text(svg, encoding="utf-8")
 
 
 def header():
@@ -400,14 +447,15 @@ def header():
 <g clip-path="url(#c)">
 <rect width="{W}" height="{h}" fill="{BP_BG}"/>
 {bp_grid(W, h)}
-{hologram(1010, 180)}
+{arm_hologram(905, 112)}
+{arm_status(1176, 202)}
 {bp_frame(W, h, dur)}
 </g>
 {name_block(56, 106, 76)}
 <text x="58" y="152" class="sans" font-size="27" fill="{TEXT}">Machines that see. Software that connects.</text>
 <text x="58" y="190" class="mono" font-size="17" fill="{HOLO}">vision / automation / embedded / full-stack</text>
 </svg>"""
-    (OUT / "assets/header-blueprint.svg").write_text(svg, encoding="utf-8")
+    (OUT / "assets/header-armor.svg").write_text(svg, encoding="utf-8")
 
 
 # ---------- insect-frass-vision ----------
