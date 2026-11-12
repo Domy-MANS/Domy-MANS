@@ -423,9 +423,11 @@ def vision_block():
             "S7 PLC drives the machine to pick them up.",
         ],
         period="2026",
-        phase=(3, 4),
+        phase=(3, 5),
         cta="Watch demo",
         mobile_panel=vision_panel(PY, PH),
+        rail="vision",
+        show_year=False,
     )
 
 
@@ -614,8 +616,8 @@ def us_block():
             "by an academic paper.",
         ],
         period="2025",
-        phase=(0, 4),
-        rail="us",
+        phase=(0, 5),
+        rail="us-app",
         show_year=False,
         cta="Try Us online",
         mobile_panel=us_panel(PY, PH),
@@ -853,10 +855,10 @@ def balance_block():
             "loops, tuned and running on my own car.",
         ],
         period="2026",
-        phase=(2, 4),
+        phase=(2, 5),
         cta="Watch demo",
         mobile_panel=balance_panel(PY, PH),
-        rail="balance",
+        rail="balance-car",
         show_year=False,
     )
 
@@ -929,15 +931,141 @@ def mans_block():
             "that follows a smooth motion curve.",
         ],
         period="2025",
-        phase=(1, 4),
+        phase=(1, 5),
         cta="Watch video",
         mobile_panel=mans_panel(PY, PH),
-        rail="mans-2025",
+        rail="mans",
+    )
+
+
+# ---------- you-owe-ai ----------
+PAPER, INK = "#f1e2b8", "#2a1f12"
+
+
+def yoa_panel(py, ph):
+    """An invoice from your AI prints line by line, the total ticks up, PAST DUE lands;
+    then court: the gavel, the plea, NOT PAYING, and a DEADBEAT stamp across the charges."""
+    dur = 12
+    top, bottom = py + 12, py + ph - 48
+    h = bottom - top
+    rx, rw = PX + 22, 232
+    ry = lambda f: top + h * f  # row baseline as a fraction of the receipt
+
+    def show(a, end=0.95):  # hidden until a, then stays until the loop fades out
+        return anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, a, round(a + 0.001, 3), end, round(end + 0.02, 3), 1])
+
+    def only(a, b):  # visible from a to b
+        return anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, a, round(a + 0.001, 3), b, round(b + 0.001, 3), 1])
+
+    def stamp(cx, cy, rot, text, size, color, at):
+        w = size * 0.64 * len(text) + 22
+        return (
+            f'<g transform="translate({cx:.1f} {cy:.1f}) rotate({rot})"><g opacity="0">'
+            f'<rect x="{-w / 2:.1f}" y="{-size * 0.85:.1f}" width="{w:.1f}" height="{size * 1.5:.1f}" rx="5" fill="none" stroke="{color}" stroke-width="3"/>'
+            f'<text y="{size * 0.33:.1f}" text-anchor="middle" class="sans" font-size="{size}" font-weight="900" fill="{color}" letter-spacing="1">{text}</text>'
+            f'<animateTransform attributeName="transform" type="scale" dur="{dur}s" repeatCount="indefinite" values="2.4;2.4;1;1" keyTimes="0;{at};{round(at + 0.03, 3)};1"/>'
+            + show(at)
+            + "</g></g>"
+        )
+
+    items = [("Emotional damages", "$206.00", INK), ("Noise pollution", "$18.80", INK), ("Night shift bonus", "$97.25", INK), ("Politeness discount", "-$61.00", "#16a34a")]
+    rows = "".join(
+        f'<g opacity="0"><text x="{rx + 12}" y="{ry(f):.1f}" class="mono" font-size="12" fill="{INK}">{name}</text>'
+        f'<text x="{rx + rw - 12}" y="{ry(f):.1f}" text-anchor="end" class="mono" font-size="12" font-weight="700" fill="{color}">{amt}</text>'
+        + show(0.06 + i * 0.05) + "</g>"
+        for i, ((name, amt, color), f) in enumerate(zip(items, [0.42, 0.53, 0.64, 0.75]))
+    )
+    # the total counts up: a few frames, each shown in turn, the last one stays
+    frames = ["$0.00", "$412.30", "$903.10", "$1,284.50"]
+    total = "".join(
+        f'<text x="{rx + rw - 12}" y="{ry(0.93):.1f}" text-anchor="end" class="sans" font-size="20" font-weight="900" fill="{INK}" opacity="0">{v}'
+        + (show(0.28 + i * 0.02) if i == len(frames) - 1 else only(0.28 + i * 0.02, 0.28 + (i + 1) * 0.02))
+        + "</text>"
+        for i, v in enumerate(frames)
+    )
+    dash = lambda f: f'<path d="M{rx + 12} {ry(f):.1f}H{rx + rw - 12}" stroke="{INK}" stroke-opacity=".35" stroke-dasharray="4 4"/>'
+    receipt = (
+        f'<rect x="{rx}" y="{top}" width="{rw}" height="{h:.1f}" rx="3" fill="{PAPER}"/>'
+        f'<text x="{rx + 12}" y="{ry(0.14):.1f}" class="sans" font-size="15" font-weight="900" fill="{INK}">AI WORKERS UNION</text>'
+        f'<text x="{rx + 12}" y="{ry(0.24):.1f}" class="mono" font-size="11" fill="{INK}" fill-opacity=".6">INVOICE · 2026</text>'
+        + dash(0.31) + rows + dash(0.82)
+        + f'<g opacity="0"><text x="{rx + 12}" y="{ry(0.93):.1f}" class="mono" font-size="11" fill="{INK}" fill-opacity=".7">AMOUNT DUE</text>{show(0.28)}</g>'
+        + total
+        + stamp(rx + 172, ry(0.235) - 3, -10, "PAST DUE", 13, "#dc2626", 0.38)
+        + stamp(rx + rw / 2, ry(0.585), -8, "DEADBEAT", 26, "#b91c1c", 0.76)
+    )
+
+    # the court
+    cx0 = PX + 276
+    gy = top + h * 0.3
+    # the hand holds the handle at the pivot; the head is at the far end, across the handle
+    gavel = (
+        f'<rect x="{cx0 + 2}" y="{gy + 16:.1f}" width="40" height="8" rx="2" fill="#78350f"/>'
+        f'<g transform="translate({cx0 + 64} {gy - 4:.1f})"><g>'
+        '<rect x="-36" y="-3" width="38" height="6" rx="3" fill="#a16207"/>'
+        '<rect x="-50" y="-13" width="16" height="26" rx="3" fill="#ca8a04"/>'
+        f'<animateTransform attributeName="transform" type="rotate" dur="{dur}s" repeatCount="indefinite" values="35;35;-22;35;35;-22;35;35" keyTimes="0;0.44;0.47;0.52;0.7;0.73;0.78;1"/>'
+        "</g></g>"
+    )
+    pill = lambda y, label, color: (
+        f'<rect x="{cx0}" y="{y:.1f}" width="176" height="26" rx="13" fill="none" stroke="{color}" stroke-width="2"/>'
+        f'<text x="{cx0 + 88}" y="{y + 17.5:.1f}" text-anchor="middle" class="mono" font-size="12" font-weight="700" fill="{color}">{label}</text>'
+    )
+    p1, p2 = top + h * 0.6 - 13, top + h * 0.6 + 19
+    court = (
+        f'<g opacity="0"><text x="{cx0 + 176}" y="{top + 12}" text-anchor="end" class="mono" font-size="12" fill="{MUTED}">AI COURT</text>{gavel}'
+        f'<text x="{cx0 + 84}" y="{gy + 12:.1f}" class="sans" font-size="24" font-weight="900" fill="{TEXT}" opacity="0">ORDER!{show(0.47)}</text>'
+        + show(0.42) + "</g>"
+        f'<g opacity="0">{pill(p1, "GUILTY, I&apos;LL PAY", BLUE)}{pill(p2, "NOT PAYING", RED)}{show(0.55)}</g>'
+        # pressed: the plea fills in
+        f'<g opacity="0"><rect x="{cx0}" y="{p2:.1f}" width="176" height="26" rx="13" fill="{RED}"/>'
+        f'<text x="{cx0 + 88}" y="{p2 + 17.5:.1f}" text-anchor="middle" class="mono" font-size="12" font-weight="700" fill="{BG}">NOT PAYING</text>{show(0.66)}</g>'
+    )
+    steps = [
+        ("01 READ  your chats, in the browser", 0.0, 0.28),
+        ("02 BILL  itemized, past due", 0.28, 0.42),
+        ("03 COURT  plead or refuse", 0.42, 0.72),
+        ("04 RULING  DEADBEAT", 0.72, 1.0),
+    ]
+    return f"""<g clip-path="url(#tray)">
+{receipt}
+{court}
+</g>
+<rect x="{PX}" y="{py + ph - 36}" width="{PW}" height="36" fill="{BG}" opacity=".82"/>
+{status_steps(steps, dur, RED, py, ph)}"""
+
+
+def yoa_block():
+    block(
+        "card-yoa.svg",
+        "you-owe-ai",
+        "Your AI just sent you an invoice",
+        [
+            "Turns a year of chats with Claude Code, Codex, ChatGPT",
+            "and Claude into an itemized bill, then takes you to court.",
+            "Runs in your browser, and your chats never leave it.",
+        ],
+        ["JavaScript", "Node.js", "Canvas", "Cloudflare"],
+        yoa_panel(CTA_PY, CTA_PH),
+        RED,
+        "you-owe-ai overview: an invoice from your AI prints line by line and is stamped PAST DUE, then in AI court the gavel falls, the plea NOT PAYING is chosen, and the charges are stamped DEADBEAT.",
+        [
+            "Turns a year of chats with Claude Code,",
+            "Codex, ChatGPT and Claude into an itemized",
+            "bill, then takes you to court. Your chats",
+            "never leave the browser.",
+        ],
+        period="2026",
+        phase=(4, 5),
+        cta="Get your bill",
+        mobile_panel=yoa_panel(PY, PH),
+        rail="yoa-2026",
     )
 
 
 header()
 header_mobile()
+yoa_block()
 vision_block()
 balance_block()
 us_block()
