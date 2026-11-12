@@ -279,109 +279,100 @@ def bp_grid(w, h):
     return f'<g stroke="{BP_MINOR}">{minor}</g><g stroke="{BP_MAJOR}">{major}</g>'
 
 
-def arm_hologram(ex, ey, s=1.0, labels=True):
-    """The header's story, 16 s: an arm in exploded view comes together, armor plates fly in
-    and lock on, then the Us heart lights up at the elbow (the MANS joint), the light runs out
-    along the armor, and the elbow flexes. Everything is in local coordinates around the elbow."""
+def suit_hologram(ox, oy, s=1.0, labels=True):
+    """The header's story, 16 s: a suit of armor in exploded view comes together, then the Us
+    reactor in its chest lights up, the light runs out to the helmet, hands and feet, the plates
+    light up from the chest outward, and the arm with the MANS elbow waves.
+    Local coordinates: the origin is the reactor, front view, about 240 tall."""
     dur = 16
     nss = 'vector-effect="non-scaling-stroke"'
     sp = lambda n: ";".join([".4 0 .2 1"] * n)
+    poly = lambda pts: "M" + " L".join(f"{x:g} {y:g}" for x, y in pts) + "Z"
 
-    def move(vals, times):  # translate keyframes, eased
+    def move(vals, times):
         return (f'<animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" '
                 f'calcMode="spline" keySplines="{sp(len(vals) - 1)}" keyTimes="{";".join(f"{t:g}" for t in times)}" values="{";".join(vals)}"/>')
 
-    def window(a, b, fade=0.02):  # visible from a to b
-        return anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, a, round(a + fade, 3), b, round(b + fade, 3), 1])
-
-    def lit(at):  # an armor plate catching the light: brighter fill and edge from `at` until the fade-out
+    def lit(at):  # a plate catching the light
         return (anim("fill-opacity", dur, [0.04, 0.04, 0.3, 0.3, 0.04], [0, at, round(at + 0.03, 3), 0.92, 1])
                 + anim("stroke", dur, [HOLO, HOLO, "#d9f7ff", "#d9f7ff", HOLO], [0, at, round(at + 0.03, 3), 0.92, 1]))
 
-    def limb(x1, x2, r1, r2):  # a tapered cylinder in wireframe: two edges and cross-sections
-        out = f'<path d="M{x1} {-r1}L{x2} {-r2}M{x1} {r1}L{x2} {r2}" fill="none" {nss}/>'
-        for k in range(5):
-            x = x1 + (x2 - x1) * k / 4
-            r = r1 + (r2 - r1) * k / 4
-            out += f'<ellipse cx="{x:.1f}" cy="0" rx="{r * 0.32:.1f}" ry="{r:.1f}" fill="none" stroke-opacity="{1 if k in (0, 4) else 0.45}" {nss}/>'
-        return out
+    def plate(pts, at):
+        return f'<path d="{poly(pts)}" {nss}>{lit(at)}</path>'
 
-    def plate(x1, x2, r1, r2, side, at_in, at_lit):  # side -1: top, 1: bottom
-        s_ = side
-        d = (f"M{x1 + 3} {s_ * r1 * 0.25:.1f}L{x1} {s_ * (r1 + 6)}L{x2 - 9} {s_ * (r2 + 6)}L{x2} {s_ * (r2 + 1)}L{x2} {s_ * r2 * 0.25:.1f}Z")
-        seam = f'<path d="M{x1 + 10} {s_ * (r1 + 1)}L{x2 - 16} {s_ * (r2 + 1)}" fill="none" stroke-opacity=".6" {nss}/>'
-        return (f'<g opacity="0"><g><path d="{d}" {nss}>{lit(at_lit)}</path>{seam}'
-                + move([f"0 {s_ * 70}", f"0 {s_ * 70}", "0 0", "0 0"], [0, at_in, at_in + 0.05, 1]) + "</g>"
-                + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, at_in, round(at_in + 0.03, 3), 0.92, 0.95, 1]) + "</g>")
+    def part(content, dx, dy):  # apart in the exploded view, together from .34
+        return f'<g>{content}{move([f"{dx} {dy}", f"{dx} {dy}", "0 0", "0 0"], [0, 0.24, 0.34, 1])}</g>'
 
-    def label(x, y, text):
-        if not labels:
-            return ""
-        return (f'<g opacity="0"><path d="M{x} {y + 6}V{y + 16}" fill="none" stroke-opacity=".7" {nss}/>'
-                f'<text x="{x}" y="{y}" text-anchor="middle" class="mono" font-size="12" fill="{HOLO}" fill-opacity="1" stroke="none">{text}</text>'
-                + window(0.05, 0.2) + "</g>")
-
-    # ---- the arm, exploded along its axis, then together (0 - .3) ----
-    apart = lambda dx: move([f"{dx} 0", f"{dx} 0", "0 0", "0 0"], [0, 0.22, 0.3, 1])
-    upper = (f'<g>{limb(-172, -26, 26, 20)}<circle cx="-188" cy="0" r="16" fill="none" {nss}/>'
-             + label(-100, -40, "upper arm") + apart(-36) + "</g>")
-    joint = ('<g><circle r="22" fill="none" ' + nss + '/><circle r="14" fill="none" stroke-opacity=".6" ' + nss + '/>'
-             + "".join(f'<circle cx="{18 * math.cos(k * math.pi / 3):.1f}" cy="{18 * math.sin(k * math.pi / 3):.1f}" r="1.6" {nss}/>' for k in range(6))
-             + label(0, -40, "elbow · MANS actuator") + "</g>")
-    hand = (f'<g><rect x="170" y="-17" width="50" height="34" rx="8" fill="none" {nss}/>'
-            + "".join(f'<path d="M220 {y}H236" fill="none" stroke-linecap="round" {nss}/>' for y in (-12, -4, 4, 12))
-            + f'<path d="M186 -17L202 -27L212 -25" fill="none" {nss}/>'
-            + label(205, -40, "hand") + apart(30) + "</g>")
-    fore_parts = f'<g>{limb(26, 166, 19, 14)}' + label(96, -36, "forearm") + apart(34) + "</g>" + hand
-
-    # ---- armor plates fly in (.32 - .56) and light up from the heart outward (.6 - .7) ----
-    upper_armor = (plate(-168, -34, 26, 20, -1, 0.34, 0.63) + plate(-168, -34, 26, 20, 1, 0.37, 0.63)
-                   + f'<g opacity="0"><g><path d="M-158 -34Q-208 -30 -208 0Q-208 30 -158 34L-160 26Q-198 22 -198 0Q-198 -22 -160 -26Z" {nss}>{lit(0.67)}</path>'
-                   + move(["-60 0", "-60 0", "0 0", "0 0"], [0, 0.32, 0.37, 1]) + "</g>"
-                   + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.32, 0.35, 0.92, 0.95, 1]) + "</g>")
-    fore_armor = (plate(30, 162, 19, 14, -1, 0.42, 0.64) + plate(30, 162, 19, 14, 1, 0.45, 0.64)
-                  + f'<g opacity="0"><g><path d="M172 -6L172 -22L212 -22L224 -12L224 -6Z" {nss}>{lit(0.67)}</path>'
-                  + "".join(f'<path d="M{x} -22Q{x + 5} -28 {x + 10} -22" fill="none" {nss}/>' for x in (180, 192, 204))
-                  + move(["60 0", "60 0", "0 0", "0 0"], [0, 0.48, 0.53, 1]) + "</g>"
-                  + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.48, 0.51, 0.92, 0.95, 1]) + "</g>")
-    cop = (f'<g opacity="0"><g><circle r="30" {nss}>{lit(0.6)}</circle><circle r="25" fill="none" stroke-opacity=".6" {nss}/>'
-           + "".join(f'<circle cx="{27.5 * math.cos(k * math.pi / 4):.1f}" cy="{27.5 * math.sin(k * math.pi / 4):.1f}" r="1.4" {nss}/>' for k in range(8))
-           + f'<animateTransform attributeName="transform" type="scale" dur="{dur}s" repeatCount="indefinite" values="1.8;1.8;1;1" keyTimes="0;0.4;0.45;1"/></g>'
-           + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.4, 0.43, 0.92, 0.95, 1]) + "</g>")
-
-    # energy runs out from the elbow along the arm
-    def run(d, at):
-        return (f'<path d="{d}" fill="none" stroke="#e6faff" stroke-width="2.4" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" {nss}>'
-                + anim("stroke-dashoffset", dur, [1, 1, 0, 0, 1], [0, at, round(at + 0.07, 3), 0.92, 1])
+    def run(d, at):  # energy running along a line
+        return (f'<path d="{d}" fill="none" stroke="#e6faff" stroke-width="2" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" {nss}>'
+                + anim("stroke-dashoffset", dur, [1, 1, 0, 0, 1], [0, at, round(at + 0.06, 3), 0.92, 1])
                 + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, at, round(at + 0.01, 3), 0.9, 0.93, 1]) + "</path>")
 
-    # ---- the Us heart (the Us logo's magnet, red and blue) at the elbow (.56 - .6) ----
-    cell = 1.55
-    heart = (f'<g opacity="0" fill-opacity="1" stroke="none" filter="url(#glow)"><g shape-rendering="crispEdges">{logo_pixels(-10 * cell, -11 * cell, cell, "RBKhg")}'
-             f'<animateTransform attributeName="transform" type="scale" dur="{dur}s" repeatCount="indefinite" values="0;0;1.25;1;1" keyTimes="0;0.56;0.59;0.61;1"/></g>'
-             + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.56, 0.57, 0.92, 0.95, 1]) + "</g>")
-    halo = (f'<circle r="26" fill="#e6faff" fill-opacity=".55" stroke="none" opacity="0" filter="url(#namefx)">'
-            + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.57, 0.6, 0.92, 0.95, 1]) + "</circle>")
+    # ---- helmet: a dome with a visor band ----
+    visor = (f'<rect x="-12" y="-55" width="24" height="5" rx="2" fill="#e6faff" {nss}>'
+             + anim("fill-opacity", dur, [0.1, 0.1, 1, 1, 0.1], [0, 0.63, 0.66, 0.92, 1]) + "</rect>")
+    helmet = part(f'<path d="M-16 -40L-17 -54Q-17 -66 0 -66Q17 -66 17 -54L16 -40L9 -34H-9Z" {nss}>{lit(0.64)}</path>{visor}'
+                  + plate([(-6, -34), (6, -34), (6, -28), (-6, -28)], 0.62), 0, -18)
+
+    # ---- torso: chest plate around the reactor, abdomen, belt ----
+    seams = f'<path d="M-14 -6L-33 -10M14 -6L33 -10M0 16V28" fill="none" stroke-opacity=".5" {nss}/>'
+    chest = plate([(-30, -27), (30, -27), (35, -4), (25, 28), (-25, 28), (-35, -4)], 0.58) + seams
+    abdomen = part(plate([(-23, 31), (23, 31), (22, 42), (-22, 42)], 0.61) + plate([(-22, 45), (22, 45), (21, 55), (-21, 55)], 0.62), 0, 7)
+    belt = part(plate([(-25, 58), (25, 58), (22, 70), (-22, 70)], 0.64), 0, 11)
+
+    # ---- the Us reactor: the Us logo's magnet, dim until it comes online at .56 ----
+    cell = 0.85
+    logo = f'<g shape-rendering="crispEdges">{logo_pixels(-10 * cell, -11 * cell, cell, "RBKhg")}</g>'
+    reactor = (f'<circle r="16" fill="{BP_BG}" fill-opacity="1" {nss}/>'
+               f'<circle r="13" fill="none" stroke-width="2.5" stroke-dasharray="6 4" {nss}>'
+               f'<animateTransform attributeName="transform" type="rotate" dur="6s" repeatCount="indefinite" values="0;360"/></circle>'
+               f'<g fill-opacity="1" stroke="none" opacity=".3">{logo}'
+               + anim("opacity", dur, [0.3, 0.3, 1, 1, 0.3], [0, 0.56, 0.58, 0.92, 1])
+               + f'<animateTransform attributeName="transform" type="scale" dur="{dur}s" repeatCount="indefinite" values="1;1;1.35;1;1" keyTimes="0;0.56;0.58;0.6;1"/></g>')
+    halo = (f'<circle r="22" fill="#e6faff" fill-opacity=".6" stroke="none" opacity="0" filter="url(#namefx)">'
+            + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.56, 0.59, 0.92, 0.95, 1]) + "</circle>")
     rings = "".join(
-        f'<circle r="18" fill="none" stroke="#e6faff" stroke-width="2" opacity="0" {nss}>'
-        + anim("r", dur, [18, 18, 90, 90], [0, a, round(a + 0.06, 3), 1])
-        + anim("opacity", dur, [0, 0, 0.9, 0, 0], [0, a, round(a + 0.005, 3), round(a + 0.06, 3), 1]) + "</circle>"
-        for a in (0.6, 0.66, 0.72)
+        f'<circle r="16" fill="none" stroke="#e6faff" stroke-width="2" opacity="0" {nss}>'
+        + anim("r", dur, [16, 16, 110, 110], [0, a, round(a + 0.07, 3), 1])
+        + anim("opacity", dur, [0, 0, 0.9, 0, 0], [0, a, round(a + 0.005, 3), round(a + 0.07, 3), 1]) + "</circle>"
+        for a in (0.58, 0.65, 0.72)
     )
 
-    # the forearm side bends at the elbow: flexes once the arm is lit (.74 - .88)
-    flex = (f'<animateTransform attributeName="transform" type="rotate" dur="{dur}s" repeatCount="indefinite" calcMode="spline" '
-            f'keySplines="{sp(4)}" keyTimes="0;0.74;0.81;0.88;1" values="0;0;-22;0;0"/>')
-    fore = f'<g>{fore_parts}{fore_armor}{run("M18 0H222", 0.61)}{flex}</g>'
-    body = upper + upper_armor + run("M-18 0H-186", 0.61) + joint + cop + fore + rings + halo + heart
-    return (f'<g transform="translate({ex} {ey}) scale({s})" fill="{HOLO}" fill-opacity=".04" stroke="{HOLO}" stroke-width="1.3" filter="url(#glow)">'
-            + f'<g>{body}' + anim("opacity", dur, [0, 1, 1, 0, 0], [0, 0.03, 0.93, 0.97, 1]) + "</g></g>")
+    def side(sx):
+        X = lambda pts: [(sx * x, y) for x, y in pts]
+        pauldron = part(f'<ellipse cx="{sx * 42}" cy="-22" rx="14" ry="11" {nss}>{lit(0.61)}</ellipse>', sx * 16, -6)
+        elbow = (f'<circle cx="{sx * 51}" cy="30" r="7" fill="none" {nss}/><circle cx="{sx * 51}" cy="30" r="2.5" {nss}/>')
+        fore = plate(X([(46, 36), (56, 36), (60, 70), (52, 70)]), 0.67) + plate(X([(50, 73), (62, 73), (63, 86), (51, 86)]), 0.7) + run(f"M{sx * 51} 37L{sx * 57} 82", 0.66)
+        if sx > 0:  # this arm waves, bending at the MANS elbow
+            fore += (f'<animateTransform attributeName="transform" type="rotate" dur="{dur}s" repeatCount="indefinite" calcMode="spline" keySplines="{sp(7)}" '
+                     f'keyTimes="0;0.72;0.77;0.8;0.83;0.86;0.91;1" values="0 51 30;0 51 30;-140 51 30;-115 51 30;-145 51 30;-120 51 30;0 51 30;0 51 30"/>')
+        arm = part(plate(X([(36, -12), (50, -12), (55, 24), (45, 24)]), 0.64) + elbow + f"<g>{fore}</g>", sx * 28, 0)
+        leg = part(plate(X([(4, 72), (24, 72), (22, 110), (9, 110)]), 0.67)
+                   + f'<circle cx="{sx * 16}" cy="116" r="6" fill="none" {nss}/>'
+                   + plate(X([(9, 123), (23, 123), (22, 156), (11, 156)]), 0.7)
+                   + plate(X([(8, 160), (24, 160), (30, 170), (6, 170)]), 0.73), sx * 8, 10)
+        runs = run(f"M{sx * 12} -8L{sx * 42} -20L{sx * 51} 30", 0.6) + run(f"M{sx * 6} 18L{sx * 14} 64L{sx * 16} 116L{sx * 17} 166", 0.63)
+        return pauldron + arm + leg + runs
+
+    notes = ""
+    if labels:  # blueprint callouts on the exploded view, all on the left
+        def note(tx, ty, ly, text):
+            return (f'<path d="M{tx} {ty}L-106 {ly}H-118" fill="none" stroke-opacity=".7" {nss}/>'
+                    f'<text x="-124" y="{ly + 4}" text-anchor="end" class="mono" font-size="12" fill="{HOLO}" fill-opacity="1" stroke="none">{text}</text>')
+        notes = (f'<g opacity="0">'
+                 + note(-15, -72, -70, "helmet · visor") + note(-30, -18, -30, "chest · Us reactor")
+                 + note(-86, 30, 30, "arm · MANS elbow") + note(-26, 126, 120, "leg")
+                 + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.05, 0.07, 0.21, 0.23, 1]) + "</g>")
+
+    body = side(-1) + side(1) + abdomen + belt + chest + helmet + run("M0 -14V-50", 0.6) + reactor + rings + halo
+    return (f'<g transform="translate({ox} {oy}) scale({s})" fill="{HOLO}" fill-opacity=".04" stroke="{HOLO}" stroke-width="1.3" filter="url(#glow)">'
+            + f'<g>{body}{notes}' + anim("opacity", dur, [0, 1, 1, 0, 0], [0, 0.03, 0.93, 0.97, 1]) + "</g></g>")
 
 
-def arm_status(x, y):
+def suit_status(x, y):
     """The story so far, bottom right: one line per act."""
     dur = 16
-    acts = [("01 ARM · exploded view", 0.0, 0.3), ("02 ARMOR · plating", 0.3, 0.55), ("03 US HEART · online", 0.55, 0.95)]
+    acts = [("01 SUIT · exploded view", 0.0, 0.3), ("02 SUIT · assembly", 0.3, 0.55), ("03 US REACTOR · online", 0.55, 0.95)]
     return "".join(
         f'<text x="{x}" y="{y}" text-anchor="end" class="mono" font-size="13" fill="{HOLO}" opacity="0">{t}'
         + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, a, round(a + 0.01, 3), b, round(b + 0.01, 3), 1]) + "</text>"
@@ -421,41 +412,41 @@ def name_block(x, y, size):
 
 
 def header_mobile():
-    mw, h, dur = 600, 400, 9
+    mw, h, dur = 600, 300, 9
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mw} {h}" width="{mw}" height="{h}" role="img" aria-label="Domy Yu: machines that see, software that connects.">
 {STYLE}
 {bp_defs(mw, h)}
 <g clip-path="url(#c)">
 <rect width="{mw}" height="{h}" fill="{BP_BG}"/>
 {bp_grid(mw, h)}
-{arm_hologram(272, 122, 0.95)}
+{suit_hologram(498, 84, 0.8, labels=False)}
 {bp_frame(mw, h, dur)}
 </g>
-{name_block(28, 236, 84)}
-<text x="30" y="290" class="sans" font-size="31" fill="{TEXT}">Machines that see.</text>
-<text x="30" y="330" class="sans" font-size="31" fill="{TEXT}">Software that connects.</text>
-<text x="30" y="374" class="mono" font-size="20" fill="{HOLO}">vision / automation / embedded / full-stack</text>
+{name_block(28, 108, 84)}
+<text x="30" y="166" class="sans" font-size="31" fill="{TEXT}">Machines that see.</text>
+<text x="30" y="206" class="sans" font-size="31" fill="{TEXT}">Software that connects.</text>
+<text x="30" y="258" class="mono" font-size="20" fill="{HOLO}">vision / automation / embedded / full-stack</text>
 </svg>"""
-    (OUT / "assets/header-armor-mobile.svg").write_text(svg, encoding="utf-8")
+    (OUT / "assets/header-suit-mobile.svg").write_text(svg, encoding="utf-8")
 
 
 def header():
-    h, dur = 220, 9
+    h, dur = 290, 9
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {h}" width="{W}" height="{h}" role="img" aria-label="Domy Yu: machines that see, software that connects.">
 {STYLE}
 {bp_defs(W, h)}
 <g clip-path="url(#c)">
 <rect width="{W}" height="{h}" fill="{BP_BG}"/>
 {bp_grid(W, h)}
-{arm_hologram(905, 112)}
-{arm_status(1176, 202)}
+{suit_hologram(1010, 94, 0.92)}
+{suit_status(1176, 276)}
 {bp_frame(W, h, dur)}
 </g>
-{name_block(56, 106, 76)}
-<text x="58" y="152" class="sans" font-size="27" fill="{TEXT}">Machines that see. Software that connects.</text>
-<text x="58" y="190" class="mono" font-size="17" fill="{HOLO}">vision / automation / embedded / full-stack</text>
+{name_block(56, 140, 76)}
+<text x="58" y="186" class="sans" font-size="27" fill="{TEXT}">Machines that see. Software that connects.</text>
+<text x="58" y="224" class="mono" font-size="17" fill="{HOLO}">vision / automation / embedded / full-stack</text>
 </svg>"""
-    (OUT / "assets/header-armor.svg").write_text(svg, encoding="utf-8")
+    (OUT / "assets/header-suit.svg").write_text(svg, encoding="utf-8")
 
 
 # ---------- insect-frass-vision ----------
