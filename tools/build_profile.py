@@ -267,48 +267,147 @@ def mobile_block(fname, title, subtitle, lines, chips, panel, brackets, accent, 
         write_rail(f"timeline-{rail}-mobile.svg", mw, mh, 24, 72, accent, None, phase)
 
 
+# ---------- header: a holographic blueprint ----------
+HOLO = "#4fd6ff"       # the hologram's cyan
+BP_BG = "#06101d"      # blueprint navy
+BP_MINOR, BP_MAJOR = "#0d2338", "#15385a"
+
+
+def bp_grid(w, h):
+    minor = "".join(f'<path d="M{x} 0V{h}"/>' for x in range(0, w, 20) if x % 100) + "".join(f'<path d="M0 {y}H{w}"/>' for y in range(0, h, 20) if y % 100)
+    major = "".join(f'<path d="M{x} 0V{h}"/>' for x in range(0, w, 100)) + "".join(f'<path d="M0 {y}H{w}"/>' for y in range(0, h, 100))
+    return f'<g stroke="{BP_MINOR}">{minor}</g><g stroke="{BP_MAJOR}">{major}</g>'
+
+
+def hologram(cx, base, s=1.0, callouts=True):
+    """An exploded view of the MANS elbow actuator, projected above a hologram table.
+
+    Each part is drawn flat, spun in its own plane, then squashed to an ellipse: an orthographic
+    3D view made of plain SVG transforms, so it costs a few hundred bytes instead of keyframed paths.
+    The stack comes apart, holds while the parts are labelled, and goes back together."""
+    dur, tilt = 12, 0.38
+    nss = 'vector-effect="non-scaling-stroke"'
+
+    def gear(n, ro, rr):
+        pts, step = [], 2 * math.pi / n
+        for i in range(n):
+            a = i * step
+            for f, r in [(0, rr), (0.18, ro), (0.5, ro), (0.68, rr)]:
+                pts.append((r * math.cos(a + f * step), r * math.sin(a + f * step)))
+        return "M" + " L".join(f"{x:.1f} {y:.1f}" for x, y in pts) + "Z"
+
+    ring = lambda r, extra="": f'<circle r="{r}" {nss}{extra}/>'
+    around = lambda n, rad, el: "".join(el(rad * math.cos(2 * math.pi * k / n), rad * math.sin(2 * math.pi * k / n), k) for k in range(n))
+    parts = [  # (drawing, spin seconds (negative: the other way), radius, label)
+        (ring(42) + ring(12) + around(6, 34, lambda x, y, k: f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3" {nss}/>'), 40, 42, "end cap · 6× M3"),
+        (f'<path d="{gear(16, 60, 53)}" {nss}/>' + ring(46) + ring(12) + around(5, 1, lambda x, y, k: f'<path d="M{12 * x:.1f} {12 * y:.1f}L{46 * x:.1f} {46 * y:.1f}" {nss}/>'), 16, 60, "gear stage · 16T"),
+        (ring(40) + ring(28) + around(10, 34, lambda x, y, k: f'<circle cx="{x:.1f}" cy="{y:.1f}" r="4" {nss}/>'), -10, 40, "bearing"),
+        (ring(54) + ring(22) + around(12, 1, lambda x, y, k: f'<path d="M{46 * x:.1f} {46 * y:.1f}L{54 * x:.1f} {54 * y:.1f}" {nss}/>'), 30, 54, "24 V motor + AS5047P"),
+    ]
+    # rest heights (assembled) and exploded heights, top part first, relative to the table
+    shut = [-82, -70, -58, -46]
+    open_ = [-150, -112, -76, -40]
+    times = "0;0.12;0.32;0.72;0.9;1"
+    spline = ";".join([".4 0 .2 1"] * 5)
+    out = []
+    for (draw, spin, r, label), y0, y1 in zip(parts, shut, open_):
+        move = f'<animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" calcMode="spline" keySplines="{spline}" keyTimes="{times}" values="0 {y0};0 {y0};0 {y1};0 {y1};0 {y0};0 {y0}"/>'
+        rot = f'<animateTransform attributeName="transform" type="rotate" dur="{abs(spin)}s" repeatCount="indefinite" values="{"0;360" if spin > 0 else "360;0"}"/>'
+        face = f'<g transform="scale(1 {tilt})"><g>{draw}{rot}</g></g>'
+        # two faces a few pixels apart give each part its thickness
+        body = f'<g transform="translate(0 6)" opacity=".35">{face}</g><g>{face}</g>'
+        note = ""
+        if callouts:
+            lx = -r - 46
+            note = (
+                f'<g opacity="0"><path d="M{-r * 0.92:.1f} 0L{-r - 16} -10H{lx}" fill="none" stroke="{HOLO}" stroke-opacity=".7" {nss}/>'
+                f'<text x="{lx - 6}" y="-6" text-anchor="end" class="mono" font-size="12" fill="{HOLO}" fill-opacity="1" stroke="none">{label}</text>'
+                + anim("opacity", dur, [0, 0, 1, 1, 0, 0], [0, 0.3, 0.36, 0.68, 0.72, 1]) + "</g>"
+            )
+        out.append(f"<g>{body}{note}{move}</g>")
+    cone = (
+        f'<path d="M-78 0L-96 -172H96L78 0Z" fill="url(#cone)" stroke="none"/>'
+        f'<path d="M0 6V-176" stroke="{HOLO}" stroke-opacity=".35" stroke-dasharray="3 5" {nss}/>'
+    )
+    table = (
+        f'<g transform="scale(1 {tilt})"><g fill="none">'
+        f'<circle r="86" stroke-opacity=".5" stroke-dasharray="2 6" {nss}/><circle r="76" stroke-opacity=".8" {nss}/>'
+        + around(24, 1, lambda x, y, k: f'<path d="M{80 * x:.1f} {80 * y:.1f}L{(86 if k % 2 else 90) * x:.1f} {(86 if k % 2 else 90) * y:.1f}" {nss}/>')
+        + f'<animateTransform attributeName="transform" type="rotate" dur="60s" repeatCount="indefinite" values="0;360"/></g></g>'
+    )
+    return (
+        f'<g transform="translate({cx} {base}) scale({s})" fill="{HOLO}" fill-opacity=".05" stroke="{HOLO}" stroke-width="1.3" filter="url(#glow)">'
+        f"{cone}{table}{''.join(reversed(out))}</g>"
+    )
+
+
+def bp_defs(w, h):
+    return f"""<defs>
+<linearGradient id="cone" x1="0" x2="0" y1="1" y2="0"><stop offset="0" stop-color="{HOLO}" stop-opacity=".16"/><stop offset="1" stop-color="{HOLO}" stop-opacity="0"/></linearGradient>
+<linearGradient id="scan" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="{HOLO}" stop-opacity="0"/><stop offset="1" stop-color="{HOLO}" stop-opacity=".14"/></linearGradient>
+<filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="namefx" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>
+<clipPath id="c"><rect width="{w}" height="{h}" rx="14"/></clipPath>
+</defs>"""
+
+
+def bp_frame(w, h, dur):
+    """Corner marks, a scan line that sweeps down the sheet, and the sheet's title block."""
+    c = 18
+    corners = "".join(
+        f'<path d="M{x + c * sx} {y}H{x}V{y + c * sy}" fill="none" stroke="{HOLO}" stroke-opacity=".7" stroke-width="2"/>'
+        for x, y, sx, sy in [(10, 10, 1, 1), (w - 10, 10, -1, 1), (10, h - 10, 1, -1), (w - 10, h - 10, -1, -1)]
+    )
+    scan = (
+        f'<rect x="0" y="-60" width="{w}" height="60" fill="url(#scan)">'
+        f'<animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" values="0 0;0 {h + 60};0 {h + 60}" keyTimes="0;0.55;1"/></rect>'
+    )
+    return corners + scan
+
+
+def name_block(x, y, size):
+    # the name glows faintly, like light on a projection
+    return (
+        f'<text x="{x}" y="{y}" class="sans" font-size="{size}" font-weight="700" fill="{HOLO}" opacity=".45" letter-spacing="-1" filter="url(#namefx)">Domy Yu</text>'
+        f'<text x="{x}" y="{y}" class="sans" font-size="{size}" font-weight="700" fill="#f2fbff" letter-spacing="-1">Domy Yu</text>'
+    )
+
+
 def header_mobile():
     mw, h, dur = 600, 300, 9
-    lines = "".join(f'<path d="M{x} 0V{h}" stroke="#141b28"/>' for x in range(0, mw, 40)) + "".join(
-        f'<path d="M0 {y}H{mw}" stroke="#141b28"/>' for y in range(0, h, 40)
-    )
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {mw} {h}" width="{mw}" height="{h}" role="img" aria-label="Domy Yu: machines that see, software that connects.">
 {STYLE}
-<defs>
-<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="{YELLOW}" stop-opacity="0"/><stop offset=".5" stop-color="{YELLOW}" stop-opacity=".16"/><stop offset="1" stop-color="{YELLOW}" stop-opacity="0"/></linearGradient>
-<clipPath id="c"><rect width="{mw}" height="{h}" rx="14"/></clipPath>
-</defs>
+{bp_defs(mw, h)}
 <g clip-path="url(#c)">
-<rect width="{mw}" height="{h}" fill="{BG}"/>
-<g>{lines}</g>
-<rect x="-200" width="200" height="{h}" fill="url(#beam)"><animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" values="0 0;{mw + 200} 0;{mw + 200} 0" keyTimes="0;0.6;1"/></rect>
+<rect width="{mw}" height="{h}" fill="{BP_BG}"/>
+{bp_grid(mw, h)}
+{hologram(486, 204, 0.72, callouts=False)}
+{bp_frame(mw, h, dur)}
 </g>
-<text x="28" y="108" class="sans" font-size="84" font-weight="700" fill="{TEXT}" letter-spacing="-1">Domy Yu</text>
+{name_block(28, 108, 84)}
 <text x="30" y="166" class="sans" font-size="31" fill="{TEXT}">Machines that see.</text>
 <text x="30" y="206" class="sans" font-size="31" fill="{TEXT}">Software that connects.</text>
-<text x="30" y="258" class="mono" font-size="20" fill="{YELLOW}">vision / automation / embedded / full-stack</text>
+<text x="30" y="258" class="mono" font-size="20" fill="{HOLO}">vision / automation / embedded / full-stack</text>
 </svg>"""
-    (OUT / "assets/header-mobile.svg").write_text(svg, encoding="utf-8")
+    (OUT / "assets/header-blueprint-mobile.svg").write_text(svg, encoding="utf-8")
 
 
 def header():
     h, dur = 220, 9
     svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {h}" width="{W}" height="{h}" role="img" aria-label="Domy Yu: machines that see, software that connects.">
 {STYLE}
-<defs>
-<linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="{YELLOW}" stop-opacity="0"/><stop offset=".5" stop-color="{YELLOW}" stop-opacity=".16"/><stop offset="1" stop-color="{YELLOW}" stop-opacity="0"/></linearGradient>
-<clipPath id="c"><rect width="{W}" height="{h}" rx="14"/></clipPath>
-</defs>
+{bp_defs(W, h)}
 <g clip-path="url(#c)">
-<rect width="{W}" height="{h}" fill="{BG}"/>
-<g>{grid(h)}</g>
-<rect x="-260" width="260" height="{h}" fill="url(#beam)"><animateTransform attributeName="transform" type="translate" dur="{dur}s" repeatCount="indefinite" values="0 0;{W + 260} 0;{W + 260} 0" keyTimes="0;0.6;1"/></rect>
+<rect width="{W}" height="{h}" fill="{BP_BG}"/>
+{bp_grid(W, h)}
+{hologram(1010, 180)}
+{bp_frame(W, h, dur)}
 </g>
-<text x="56" y="106" class="sans" font-size="76" font-weight="700" fill="{TEXT}" letter-spacing="-1">Domy Yu</text>
+{name_block(56, 106, 76)}
 <text x="58" y="152" class="sans" font-size="27" fill="{TEXT}">Machines that see. Software that connects.</text>
-<text x="58" y="190" class="mono" font-size="17" fill="{YELLOW}">vision / automation / embedded / full-stack</text>
+<text x="58" y="190" class="mono" font-size="17" fill="{HOLO}">vision / automation / embedded / full-stack</text>
 </svg>"""
-    (OUT / "assets/header.svg").write_text(svg, encoding="utf-8")
+    (OUT / "assets/header-blueprint.svg").write_text(svg, encoding="utf-8")
 
 
 # ---------- insect-frass-vision ----------
